@@ -1,0 +1,15 @@
+{
+  "network": "testnet",
+  "chainId": 42431,
+  "registry": "0x6c5ccc3f51641004bb6d21a0b49f2f4c9132837a",
+  "lineBook": "0x346f5f3755e7ddbad1f4efd408468159a57207d0",
+  "deployBlock": "37299236",
+  "owner": "0x51EBD697CeC652bB331C787C2A1c1AE4d42F0464",
+  "attester": "0x7e2412fE1277C005eBe422773F3A4D6Ae24a1516",
+  "servicer": "0xfD159a4656014Ae65Bef45FBe9BC432efFD839af",
+  "txs": {
+    "registry": "0x8476ce89e40fe98c795d46d357ddc27c1b320f3732191d06982b02af80c5fa6f",
+    "lineBook": "0x377e3209b7fa3cd9fcdbd240bf75481e46498e69ca9201c88e89c98c55e23703"
+  },
+  "deployedAt": "2026-09-28T16:44:43.767Z"
+}
