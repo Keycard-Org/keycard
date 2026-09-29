@@ -14,11 +14,13 @@ import { UserError } from './lines'
  * which we record on-chain as flags in KeycardRegistry. We never receive or store the passport.
  */
 const client = env.SELF_API_KEY ? new SelfClient({ apiKey: env.SELF_API_KEY }) : null
-// merchants use the borrower rules (adult, not excluded, OFAC-clear)
-const flowFor = (role: string) => (role === 'guarantor' ? env.SELF_FLOW_ID_GUARANTOR : env.SELF_FLOW_ID_BORROWER)
+// merchants use the borrower rules (adult, not excluded, OFAC-clear). Guarantors use their own flow (which also
+// reveals nationality) when configured, otherwise the borrower flow: same rules, nationality simply not disclosed.
+const flowFor = (role: string) =>
+  role === 'guarantor' ? env.SELF_FLOW_ID_GUARANTOR || env.SELF_FLOW_ID_BORROWER : env.SELF_FLOW_ID_BORROWER
 const ATTESTATION_TTL_DAYS = 365
 
-export const selfEnabled = () => Boolean(client && env.SELF_FLOW_ID_BORROWER && env.SELF_FLOW_ID_GUARANTOR && env.SELF_WEBHOOK_SECRET)
+export const selfEnabled = () => Boolean(client && env.SELF_FLOW_ID_BORROWER && env.SELF_WEBHOOK_SECRET)
 
 export async function startSelfSession(wallet: Address, role: string) {
   if (!client) throw new UserError('identity verification is not configured on this server', 503)
