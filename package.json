@@ -9,5 +9,13 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "pnpm": {
+    "overrides": {
+      "postcss": "^8.5.23",
+      "sharp": "^0.35.4",
+      "ws@8": "^8.21.0",
+      "underscore": "^1.13.8"
+    }
   }
 }

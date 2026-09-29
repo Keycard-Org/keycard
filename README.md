@@ -41,15 +41,15 @@ pnpm --filter @keycard/web build && pnpm --filter @keycard/web start   # :3000; 
 Passkeys need HTTPS on phones. For a phone test, run `cloudflared tunnel --url http://localhost:3000` and add the tunnel URL to `WEB_ORIGINS`.
 
 ## Deploy (Railway)
-Each app has config-as-code in its own `railway.json` (build, start and health check).
+Set these in each Railway service's Settings (Railway config-as-code is deprecated for new services).
 1. New project → **Deploy from GitHub repo** → `Keycard-Org/keycard`. Add **Postgres** (+ New → Database → PostgreSQL).
-2. **Service `keycard-servicer`:** Settings → *Config-as-code* → `apps/servicer/railway.json`. Variables:
+2. **Service `keycard-servicer`:** start command `cd apps/servicer && ./node_modules/.bin/tsx src/main.ts`, health check `/api/health`, Serverless OFF. Variables:
    - the operator keys, `KEY_ENC_SECRET` and `ADMIN_TOKEN` (see `.env.example`);
    - `TEMPO_NETWORK=testnet`;
    - `DATABASE_URL=${{Postgres.DATABASE_URL}}`;
    - `WEB_ORIGINS` and `PUBLIC_WEB_ORIGIN` (the web URL).
    Generate a public domain. It must stay running, because the scheduler and watcher live in this process.
-3. **Service `keycard-web`** (same repo, second service): *Config-as-code* → `apps/web/railway.json`. Variable `SERVICER_URL=https://<keycard-servicer domain>`. Generate a public domain.
+3. **Service `keycard-web`** (same repo, second service): build command `pnpm --filter @keycard/web build`, start command `cd apps/web && ./node_modules/.bin/next start -p $PORT`. Variable `SERVICER_URL=https://<keycard-servicer domain>`. Generate a public domain.
 4. The Self webhook is `https://<keycard-servicer domain>/api/self/webhook`.
 
 `render.yaml` is kept as an alternative Render Blueprint.

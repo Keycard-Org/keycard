@@ -12,7 +12,7 @@
   "dependencies": {
     "@arx-research/libhalo": "1.20.0",
     "@keycard/sdk": "workspace:*",
-    "next": "15.5.4",
+    "next": "15.5.26",
     "ox": "0.14.45",
     "qrcode": "1.5.4",
     "react": "19.1.1",
