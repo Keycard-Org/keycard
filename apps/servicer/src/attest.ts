@@ -17,7 +17,10 @@ export async function attestWallet(p: {
   const wallet = p.wallet.toLowerCase() as Address
   const nullifierHash = keccak256(stringToHex(p.nullifier))
   const [clash] = await sql`SELECT wallet FROM attestations WHERE nullifier_hash=${nullifierHash} AND wallet<>${wallet}`
-  if (clash) throw new Error('this identity is already linked to another KEYCARD account')
+  if (clash) {
+    await audit({ actor: 'servicer', action: 'self.identity_already_linked', detail: { wallet, linkedTo: clash.wallet.slice(0, 10) } })
+    throw new Error('this identity is already linked to another KEYCARD account')
+  }
   const receipt = await registryWrite('attest', [wallet, nullifierHash, p.flags, BigInt(Math.floor(p.expiresAt.getTime() / 1000))])
   await sql`
     INSERT INTO attestations (wallet, nullifier_hash, flags, expires_at, nationality, source, self_session_id, tx_hash)

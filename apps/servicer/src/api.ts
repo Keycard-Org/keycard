@@ -330,6 +330,20 @@ const requireAdmin = async (c: any, next: any) => {
   await next()
 }
 
+// Self verification diagnostics: what arrived and why it was accepted/rejected (no nullifiers, no personal data)
+app.get('/api/admin/self-debug', requireAdmin, async (c) => {
+  const sessions = await sql`
+    SELECT id, left(wallet, 10) AS wallet, role, status, flow_id AS expected_flow, created_at, updated_at,
+           raw->>'type' AS event_type, raw->>'flow_id' AS event_flow, raw->>'status' AS event_status,
+           raw->>'reason' AS event_reason, raw->>'environment' AS event_env, (raw->>'nullifier') IS NOT NULL AS has_nullifier
+    FROM self_sessions ORDER BY created_at DESC LIMIT 15`
+  const events = await sql`
+    SELECT action, detail, created_at FROM audit_log
+    WHERE action LIKE 'self.%' OR action LIKE 'identity.%' ORDER BY created_at DESC LIMIT 20`
+  const [att] = await sql`SELECT count(*) AS n FROM attestations`
+  return c.json({ attestations: Number(att.n), sessions, events })
+})
+
 app.get('/api/admin/lines', requireAdmin, async (c) => {
   const rows = await sql`SELECT id FROM lines ORDER BY created_at DESC LIMIT 200`
   return c.json(await Promise.all(rows.map((r) => lineView(r.id))))

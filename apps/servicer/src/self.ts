@@ -59,13 +59,16 @@ export async function handleSelfWebhook(rawBody: string, headers: Record<string,
   let event
   try {
     event = SelfWebhooks.verify(rawBody, headers, env.SELF_WEBHOOK_SECRET)
-  } catch {
+  } catch (e: any) {
+    console.error('[self] webhook signature verification FAILED (check SELF_WEBHOOK_SECRET):', e?.message)
     throw new UserError('invalid webhook signature', 401)
   }
+  console.log('[self] webhook', event.type, (event as any).status ?? '', (event as any).flow_id ?? '', (event as any).environment ?? '')
   if (event.type !== 'verification.completed') return
 
   const [session] = await sql`SELECT * FROM self_sessions WHERE external_uuid=${event.external_uuid}`
   if (!session) {
+    console.warn('[self] webhook for unknown session', event.external_uuid)
     await audit({ actor: 'servicer', action: 'self.unknown_session', detail: { external_uuid: event.external_uuid } })
     return
   }
