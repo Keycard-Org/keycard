@@ -17,7 +17,11 @@ const STEP = 2_000n
 
 async function cursor(name: string): Promise<bigint> {
   const [c] = await sql`SELECT last_block FROM cursors WHERE name=${name}`
-  return c ? BigInt(c.last_block) : (net.deployBlock ?? 0n)
+  if (c) return BigInt(c.last_block)
+  // fresh database: nothing historical belongs to it, so start from the current block
+  const head = await getBlockNumber(publicClient)
+  await setCursor(name, head)
+  return head
 }
 async function setCursor(name: string, b: bigint) {
   await sql`INSERT INTO cursors (name,last_block) VALUES (${name},${b.toString()})

@@ -99,9 +99,19 @@ export async function processPayments(from: bigint, to: bigint) {
 
     let status = 'settled'
     let dest: Address | null = merchant ? (merchant.settle_to as Address) : null
-    if (!line || !merchant) {
+    if (!line) {
+      // not one of THIS servicer's credit accounts (another deployment sharing the network address, or a
+      // stray transfer): record it, never move money for it
+      await sql`
+        INSERT INTO payments (pay_tx, log_index, line_id, merchant_code, payer, amount, memo, status, block_number)
+        VALUES (${l.transactionHash}, ${l.logIndex}, NULL, NULL, ${payer}, ${amount.toString()}, ${l.args.memo},
+                'unknown_payer', ${l.blockNumber.toString()})
+        ON CONFLICT (pay_tx, log_index) DO NOTHING`
+      continue
+    }
+    if (!merchant) {
       status = 'unmatched'
-      dest = payer // refund: give the credit back
+      dest = payer // our card paid an unknown merchant code: refund the credit
     } else if (
       lower(merchant.owner_wallet) === lower(line.borrower_wallet) ||
       (line.guarantor_wallet && lower(merchant.owner_wallet) === lower(line.guarantor_wallet))
