@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.key
+.keys.*.json
+contracts/out/
+contracts/cache/
+contracts/broadcast/*/4217/
+contracts/broadcast/*/42431/
+.next/
+dist/
+.code-review-graph/
+*.tsbuildinfo
+test-results/
+playwright-report/
