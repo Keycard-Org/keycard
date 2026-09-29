@@ -85,6 +85,10 @@ export async function freezeCard(wallet: Address) {
 /** Public lookup for a merchant's phone after the first tap: which credit account does this card spend from? */
 export async function cardInfo(cardAddress: Address) {
   const [row] = await sql`SELECT credit_account, card_limit, card_status, status FROM lines WHERE card_key_id=${lower(cardAddress)}`
-  if (!row || row.card_status !== 'active' || row.status !== 'active') throw new UserError('this card is not an active KEYCARD', 404)
+  if (!row) throw new UserError('this card is not linked to any KEYCARD', 404)
+  if (row.card_status !== 'active') throw new UserError('this physical card has been frozen by its owner', 403)
+  if (row.status === 'grace') throw new UserError('declined: this KEYCARD has an overdue payment. The owner needs to add money to their wallet.', 403)
+  if (row.status === 'frozen') throw new UserError('declined: this KEYCARD is frozen', 403)
+  if (row.status !== 'active') throw new UserError(`declined: this KEYCARD is ${row.status}`, 403)
   return { creditAccount: row.credit_account as Address, cardLimit: row.card_limit.toString() }
 }
