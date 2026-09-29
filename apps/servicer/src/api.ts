@@ -3,7 +3,7 @@ import { cors } from 'hono/cors'
 import type { Address, Hex } from 'viem'
 import { z } from 'zod'
 import { BORROWER_FLAGS, GUARANTOR_FLAGS } from '@keycard/sdk'
-import { env, excludedCountries, net, tiers } from './config'
+import { env, excludedCountries, net, tiers, webOrigins } from './config'
 import { treasury } from './chain'
 import { audit, sql } from './db'
 import { issueChallenge, issueRegistrationChallenge, mintSession, readSession, verifyAssertion, verifyKeyRegistration, verifyRegistration, walletFromPasskey } from './auth'
@@ -21,7 +21,7 @@ import { Actions } from 'viem/tempo'
 type Vars = { wallet: Address }
 export const app = new Hono<{ Variables: Vars }>()
 
-app.use('/api/*', cors({ origin: env.WEB_ORIGINS.split(',').map((s) => s.trim()), allowHeaders: ['Content-Type', 'Authorization'], credentials: false }))
+app.use('/api/*', cors({ origin: webOrigins, allowHeaders: ['Content-Type', 'Authorization'], credentials: false }))
 
 app.onError((err, c) => {
   if (err instanceof UserError) return c.json({ error: err.message }, err.status as any)
@@ -63,6 +63,7 @@ app.get('/api/config', async (c) => {
     excludedCountries: [...excludedCountries],
     selfEnabled: selfEnabled(),
     devVerify: devVerifyEnabled(),
+    webOrigins,
     merchants,
   })
 })

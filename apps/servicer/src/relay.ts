@@ -2,7 +2,7 @@ import type { Address } from 'viem'
 import { Transaction } from 'viem/tempo'
 import { Handler } from 'tempo.ts/server'
 import { ACCOUNT_KEYCHAIN } from '@keycard/sdk'
-import { env, net } from './config'
+import { env, net, webOrigins } from './config'
 import { publicClient, treasury } from './chain'
 import { sql } from './db'
 
@@ -54,7 +54,7 @@ export const relayHandler = Handler.feePayer({
   account: treasury as any,
   client: publicClient as any,
   path: '/relay',
-  cors: { origin: env.WEB_ORIGINS.split(',').map((s) => s.trim()) },
+  cors: { origin: webOrigins },
   async onRequest(request: any) {
     const serialized = request?.params?.[0]
     if (typeof serialized === 'string') await checkRelayPolicy(serialized as `0x${string}`)

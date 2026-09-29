@@ -1,5 +1,5 @@
 import { serve } from '@hono/node-server'
-import { env, net } from './config'
+import { env, net, webOrigins } from './config'
 import { migrate } from './migrate'
 import { app } from './api'
 import { relayHandler } from './relay'
@@ -11,7 +11,7 @@ import { treasury } from './chain'
 
 await migrate()
 
-app.use('/rpc', cors({ origin: env.WEB_ORIGINS.split(',').map((s) => s.trim()) }))
+app.use('/rpc', cors({ origin: webOrigins }))
 app.post('/rpc', (c) => rpcProxy(c.req.raw))
 
 // Fee-sponsorship relay (viem `withRelay` compatible) mounted next to the API.

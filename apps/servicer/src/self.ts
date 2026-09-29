@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { Address } from 'viem'
 import { SelfClient, SelfWebhooks } from '@selfxyz/enterprise-sdk'
 import { BORROWER_FLAGS, GUARANTOR_FLAGS } from '@keycard/sdk'
-import { env } from './config'
+import { env, publicWebOrigin } from './config'
 import { attestWallet } from './attest'
 import { audit, sql } from './db'
 import { UserError } from './lines'
@@ -27,7 +27,7 @@ export async function startSelfSession(wallet: Address, role: string) {
   const flowId = flowFor(role)
   if (!flowId) throw new UserError(`no Self flow configured for ${role}`, 503)
   const externalUuid = randomUUID()
-  const base = env.PUBLIC_WEB_ORIGIN
+  const base = publicWebOrigin
   let s: any
   try {
     s = await client.sessions.create({

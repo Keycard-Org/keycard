@@ -3,7 +3,7 @@ import { verifyMessage, type Address, type Hex } from 'viem'
 import { PublicKey, WebAuthnP256 } from 'ox'
 import { Credential, Registration } from 'ox/webauthn'
 import { Account } from 'viem/tempo'
-import { env } from './config'
+import { env, webOrigins } from './config'
 import { sql } from './db'
 
 // Session auth: the client proves control of its passkey by signing a server nonce (WebAuthn assertion).
@@ -90,7 +90,7 @@ export function verifyRegistration(p: { challengeId: string; credential: any }):
   const c = regChallenges.get(p.challengeId)
   if (!c || c.exp < Date.now()) throw new Error('registration challenge expired')
   regChallenges.delete(p.challengeId)
-  const origins = env.WEB_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+  const origins = webOrigins
   const cred = Credential.deserialize(p.credential)
   let lastErr: unknown
   for (const origin of origins) {

@@ -69,6 +69,10 @@ export const net: Network = getNetwork(env.TEMPO_NETWORK, {
 })
 if (!net.registry || !net.lineBook) throw new Error(`no deployment found at ${deploymentsFile}`)
 
+/** Origins as browsers send them: no trailing slash, no path. */
+export const webOrigins = env.WEB_ORIGINS.split(',').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean)
+export const publicWebOrigin = env.PUBLIC_WEB_ORIGIN.trim().replace(/\/+$/, '')
+
 export const tiers = env.TIERS.split(',').map((s) => BigInt(s.trim()))
 export const excludedCountries = new Set(env.EXCLUDED_COUNTRIES.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean))
 export const keys = {
