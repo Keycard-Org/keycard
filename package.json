@@ -6,5 +6,8 @@
   "scripts": {
     "typecheck": "pnpm -r typecheck",
     "test:contracts": "cd contracts && forge test"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -40,16 +40,19 @@ pnpm --filter @keycard/web build && pnpm --filter @keycard/web start   # :3000; 
 
 Passkeys need HTTPS on phones. For a phone test, run `cloudflared tunnel --url http://localhost:3000` and add the tunnel URL to `WEB_ORIGINS`.
 
-## Deploy (Render)
-`render.yaml` is a Blueprint that creates **keycard-servicer**, **keycard-web** and **keycard-db**.
-1. Render → New → Blueprint → select this repo.
-2. Fill in the `sync:false` secrets on keycard-servicer:
-   - the operator keys and `KEY_ENC_SECRET`;
-   - `ADMIN_TOKEN`;
-   - `WEB_ORIGINS` and `PUBLIC_WEB_ORIGIN`, both set to the keycard-web URL.
-3. Set `SERVICER_URL` on keycard-web to the keycard-servicer URL.
-4. Use an **always-on** plan for keycard-servicer, because the scheduler and watcher must keep running.
-5. The Self webhook is `https://<keycard-servicer>/api/self/webhook`.
+## Deploy (Railway)
+Each app has config-as-code in its own `railway.json` (build, start and health check).
+1. New project → **Deploy from GitHub repo** → `Keycard-Org/keycard`. Add **Postgres** (+ New → Database → PostgreSQL).
+2. **Service `keycard-servicer`:** Settings → *Config-as-code* → `apps/servicer/railway.json`. Variables:
+   - the operator keys, `KEY_ENC_SECRET` and `ADMIN_TOKEN` (see `.env.example`);
+   - `TEMPO_NETWORK=testnet`;
+   - `DATABASE_URL=${{Postgres.DATABASE_URL}}`;
+   - `WEB_ORIGINS` and `PUBLIC_WEB_ORIGIN` (the web URL).
+   Generate a public domain. It must stay running, because the scheduler and watcher live in this process.
+3. **Service `keycard-web`** (same repo, second service): *Config-as-code* → `apps/web/railway.json`. Variable `SERVICER_URL=https://<keycard-servicer domain>`. Generate a public domain.
+4. The Self webhook is `https://<keycard-servicer domain>/api/self/webhook`.
+
+`render.yaml` is kept as an alternative Render Blueprint.
 
 ## Tests
 ```bash
