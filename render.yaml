@@ -1,0 +1,65 @@
+# Render Blueprint: KEYCARD servicer (API + relay + RPC proxy + scheduler + watcher) and web app, plus Postgres.
+# Secrets marked sync:false are entered in the Render dashboard, never committed.
+databases:
+  - name: keycard-db
+    databaseName: keycard
+    user: keycard
+
+services:
+  - type: web
+    name: keycard-servicer
+    runtime: node
+    # The scheduler/watcher must run continuously: use an always-on plan (free web services sleep).
+    buildCommand: corepack enable && pnpm install --frozen-lockfile
+    startCommand: pnpm --filter @keycard/servicer start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: TEMPO_NETWORK
+        value: testnet
+      - key: DATABASE_URL
+        fromDatabase:
+          name: keycard-db
+          property: connectionString
+      - key: TREASURY_PK
+        sync: false
+      - key: ATTESTER_PK
+        sync: false
+      - key: SERVICER_PK
+        sync: false
+      - key: SETTLEMENT_PK
+        sync: false
+      - key: KEY_ENC_SECRET
+        sync: false
+      - key: ADMIN_TOKEN
+        sync: false
+      - key: WEB_ORIGINS
+        sync: false
+      - key: PUBLIC_WEB_ORIGIN
+        sync: false
+      - key: PERIOD_SECONDS
+        value: "90"
+      - key: GRACE_SECONDS
+        value: "60"
+      - key: ALLOW_DEV_VERIFY
+        value: "1"
+      - key: SELF_API_KEY
+        sync: false
+      - key: SELF_FLOW_ID_BORROWER
+        sync: false
+      - key: SELF_FLOW_ID_GUARANTOR
+        sync: false
+      - key: SELF_WEBHOOK_SECRET
+        sync: false
+
+  - type: web
+    name: keycard-web
+    runtime: node
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @keycard/web build
+    startCommand: pnpm --filter @keycard/web start
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SERVICER_URL        # public URL of keycard-servicer, e.g. https://keycard-servicer.onrender.com
+        sync: false
