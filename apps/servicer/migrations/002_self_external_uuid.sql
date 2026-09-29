@@ -1,0 +1,2 @@
+ALTER TABLE self_sessions ADD COLUMN IF NOT EXISTS external_uuid TEXT UNIQUE;
+ALTER TABLE self_sessions ADD COLUMN IF NOT EXISTS flow_id TEXT;

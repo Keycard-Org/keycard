@@ -1,0 +1,79 @@
+import { readFileSync, existsSync } from 'node:fs'
+import { resolve } from 'node:path'
+import type { Address, Hex } from 'viem'
+import { z } from 'zod'
+import { getNetwork, type Network } from '@keycard/sdk'
+
+const root = resolve(import.meta.dirname, '../../..')
+
+/** Loads ../../.env.<network> (operator keys) then process.env overrides. */
+function loadEnvFile(network: string): Record<string, string> {
+  const file = resolve(root, `.env.${network}`)
+  if (!existsSync(file)) return {}
+  return Object.fromEntries(
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .filter((l) => l.includes('=') && !l.startsWith('#'))
+      .map((l) => [l.slice(0, l.indexOf('=')).trim(), l.slice(l.indexOf('=') + 1).trim()]),
+  )
+}
+
+const networkName = process.env.TEMPO_NETWORK ?? 'testnet'
+const raw = { ...loadEnvFile(networkName), ...process.env }
+
+const hex = z.string().regex(/^0x[0-9a-fA-F]{64}$/)
+const Env = z.object({
+  TEMPO_NETWORK: z.enum(['testnet', 'mainnet']).default('testnet'),
+  TREASURY_PK: hex,
+  ATTESTER_PK: hex,
+  SERVICER_PK: hex,
+  SETTLEMENT_PK: hex,
+  KEY_ENC_SECRET: z.string().min(40),
+  DATABASE_URL: z.string().default('postgres://keycard:keycard@127.0.0.1:5544/keycard'),
+  PORT: z.coerce.number().default(8787),
+  PUBLIC_WEB_ORIGIN: z.string().default('http://localhost:3000'),
+  // every origin the web app / PWA is served from (passkey origin + rpId are checked against these)
+  WEB_ORIGINS: z.string().default('http://localhost:3000'),
+  // testnet-only: allow registering a raw public key without a WebAuthn ceremony (used by API e2e tests)
+  ALLOW_UNVERIFIED_REGISTRATION: z.enum(['0', '1']).default('0'),
+  // testnet-only: lets a signed-in user skip Self (for team testing before Self is configured). Ignored on mainnet.
+  ALLOW_DEV_VERIFY: z.enum(['0', '1']).default('0'),
+  PERIOD_SECONDS: z.coerce.number().int().positive().default(30 * 24 * 3600),
+  GRACE_SECONDS: z.coerce.number().int().positive().default(5 * 24 * 3600),
+  TERM_DAYS: z.coerce.number().int().positive().default(180),
+  // credit tiers in token base units (6 decimals): $20 -> $50 -> $100
+  TIERS: z.string().default('20000000,50000000,100000000'),
+  // physical card (NFC chip) per-period limit, contactless-style, in token base units ($10)
+  CARD_LIMIT: z.coerce.bigint().default(10_000_000n),
+  ON_TIME_TO_UPGRADE: z.coerce.number().int().positive().default(2),
+  // Comma-separated ISO-3 residence countries refused at signup. Empty during the hackathon pilot (team decision
+  // 2026-09-29). Set to 'IND' before any public launch unless a legal opinion says otherwise.
+  EXCLUDED_COUNTRIES: z.string().default(''),
+  SELF_API_KEY: z.string().optional(),
+  SELF_FLOW_ID_BORROWER: z.string().optional(),
+  SELF_FLOW_ID_GUARANTOR: z.string().optional(),
+  SELF_WEBHOOK_SECRET: z.string().optional(),
+  RELAY_MAX_TX_PER_SENDER_PER_DAY: z.coerce.number().default(200),
+  ADMIN_TOKEN: z.string().min(24).optional(),
+})
+
+export const env = Env.parse(raw)
+
+const deploymentsFile = resolve(root, `deployments/${env.TEMPO_NETWORK}.json`)
+const deployed = existsSync(deploymentsFile) ? JSON.parse(readFileSync(deploymentsFile, 'utf8')) : {}
+
+export const net: Network = getNetwork(env.TEMPO_NETWORK, {
+  registry: deployed.registry as Address | undefined,
+  lineBook: deployed.lineBook as Address | undefined,
+  deployBlock: deployed.deployBlock ? BigInt(deployed.deployBlock) : undefined,
+})
+if (!net.registry || !net.lineBook) throw new Error(`no deployment found at ${deploymentsFile}`)
+
+export const tiers = env.TIERS.split(',').map((s) => BigInt(s.trim()))
+export const excludedCountries = new Set(env.EXCLUDED_COUNTRIES.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean))
+export const keys = {
+  treasury: env.TREASURY_PK as Hex,
+  attester: env.ATTESTER_PK as Hex,
+  servicer: env.SERVICER_PK as Hex,
+  settlement: env.SETTLEMENT_PK as Hex,
+}
