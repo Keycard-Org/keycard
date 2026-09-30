@@ -93,3 +93,12 @@ export async function cardInfo(cardAddress: Address) {
   if (row.status !== 'active') throw new UserError(`declined: this KEYCARD is ${row.status}`, 403)
   return { creditAccount: row.credit_account as Address, cardLimit: row.card_limit.toString() }
 }
+
+/** Admin: release a physical card from whatever line it is linked to (revokes its key on-chain, frees it to re-link). */
+export async function releaseCard(cardAddress: Address) {
+  const [row] = await sql`SELECT borrower_wallet FROM lines WHERE card_key_id=${lower(cardAddress)} ORDER BY created_at DESC LIMIT 1`
+  if (!row) throw new UserError('card is not linked to any line', 404)
+  await freezeCard(row.borrower_wallet)
+  await audit({ actor: 'admin', action: 'card.released', detail: { card: lower(cardAddress) } })
+  return { ok: true, releasedFrom: row.borrower_wallet.slice(0, 10) }
+}

@@ -5,7 +5,7 @@ import { explainChainError, linkPhysicalCard } from '@/lib/wallet'
 import { nfcSupportedHint } from '@/lib/halo'
 
 /** Borrower: link / freeze a physical NFC KEYCARD (Burner card, chip slot 1). */
-export function PhysicalCard({ card, onChange }: { card: { address: string; limit: string; status: string } | null; onChange: () => void }) {
+export function PhysicalCard({ card, onChange, canLink = true }: { card: { address: string; limit: string; status: string } | null; onChange: () => void; canLink?: boolean }) {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -47,7 +47,8 @@ export function PhysicalCard({ card, onChange }: { card: { address: string; limi
             Linked: <span className="mono">{short(card!.address)}</span> · tap limit {usd(card!.limit)} per period
           </p>
           <p className="small muted">Tap it on any KEYCARD merchant’s phone to pay. Lost it? Freeze it instantly.</p>
-          <button className="danger block" disabled={busy} onClick={freeze}>Freeze physical card</button>
+          <button className="danger block" disabled={busy} onClick={freeze}>Freeze & unlink physical card</button>
+          <p className="small muted">Freezing also unlinks it, so you can link this card to another KEYCARD later.</p>
         </>
       ) : (
         <>
@@ -56,7 +57,8 @@ export function PhysicalCard({ card, onChange }: { card: { address: string; limi
             limit. We use the card’s free key slot. <b>Your Burner wallet and PIN are never touched.</b>
           </p>
           <p className="small muted">{nfcSupportedHint()}</p>
-          <button className="block" disabled={busy} onClick={link}>{busy ? status ?? 'Waiting for card…' : 'Link a physical card'}</button>
+          {!canLink && <p className="small warn">Your line must be active to link a card.</p>}
+          <button className="block" disabled={busy || !canLink} onClick={link}>{busy ? status ?? 'Waiting for card…' : 'Link a physical card'}</button>
         </>
       )}
       {status && !busy && <p className="small notice">{status}</p>}

@@ -13,7 +13,7 @@ import { selfEnabled, startSelfSession, handleSelfWebhook, devVerify, devVerifyE
 import { stats } from './stats'
 import { activateKeyAuthorization, checkKeyAuthorization } from './keyauth'
 import { fetchVault, storeBackup, usernameAvailable } from './passwordlogin'
-import { cardChallenge, cardInfo, freezeCard, linkCard } from './cards'
+import { cardChallenge, cardInfo, freezeCard, linkCard, releaseCard } from './cards'
 import { confirmRenewMandate, maybeUnfreeze, payNow, renewMandate } from './lifecycle'
 import { getMerchant, merchantDashboard, registerMerchant } from './merchants'
 import { settlement, publicClient } from './chain'
@@ -356,6 +356,8 @@ app.get('/api/admin/self-debug', requireAdmin, async (c) => {
   const [att] = await sql`SELECT count(*) AS n FROM attestations`
   return c.json({ attestations: Number(att.n), sessions, events })
 })
+
+app.post('/api/admin/cards/:address/release', requireAdmin, async (c) => c.json(await releaseCard(addr.parse(c.req.param('address')))))
 
 app.get('/api/admin/lines', requireAdmin, async (c) => {
   const rows = await sql`SELECT id FROM lines ORDER BY created_at DESC LIMIT 200`
