@@ -13,38 +13,47 @@ export default function Stats() {
     const t = setInterval(load, 15_000)
     return () => clearInterval(t)
   }, [])
-  if (!s) return <main className="wrap"><p className="muted">Loading…</p></main>
+  if (!s) return <main className="wrap"><p className="muted" style={{ marginTop: 40 }}>Loading live numbers…</p></main>
+  const items: [React.ReactNode, string][] = [
+    [s.lines.opened, 'credit lines opened'],
+    [s.users.verified, 'verified humans (Self)'],
+    [usd(s.spent.amount), `spent · ${s.spent.count} payments`],
+    [usd(s.repaid.amount), `auto-paid · ${s.repaid.count} bills`],
+    [s.onTimeRate === null ? '—' : `${Math.round(s.onTimeRate * 100)}%`, 'bills paid on time'],
+    [s.lines.withGuarantor, 'lines with a family backup'],
+    [usd(s.guarantorPulls.amount), 'paid by family backups'],
+    [s.mandatesRevoked, 'auto-pay turned off → frozen'],
+    [s.lines.defaulted, 'defaults'],
+  ]
   return (
     <main className="wrap wide">
-      <h1>KEYCARD, live</h1>
-      <p className="muted small">Every number reconciles to a transaction on Tempo {cfg?.network}.</p>
-      <div className="grid">
-        <div className="stat"><b>{s.lines.opened}</b><span className="small muted">lines opened</span></div>
-        <div className="stat"><b>{s.users.verified}</b><span className="small muted">verified humans (Self)</span></div>
-        <div className="stat"><b>{usd(s.spent.amount)}</b><span className="small muted">spent · {s.spent.count} payments</span></div>
-        <div className="stat"><b>{usd(s.repaid.amount)}</b><span className="small muted">auto-repaid · {s.repaid.count} pulls</span></div>
-        <div className="stat"><b>{s.onTimeRate === null ? '—' : `${Math.round(s.onTimeRate * 100)}%`}</b><span className="small muted">on-time statements</span></div>
-        <div className="stat"><b>{s.lines.withGuarantor}</b><span className="small muted">family-guaranteed lines</span></div>
-        <div className="stat"><b>{usd(s.guarantorPulls.amount)}</b><span className="small muted">paid by guarantors</span></div>
-        <div className="stat"><b>{s.mandatesRevoked}</b><span className="small muted">mandates revoked → frozen</span></div>
-        <div className="stat"><b>{s.lines.defaulted}</b><span className="small muted">defaults</span></div>
+      <span className="eyebrow" style={{ marginTop: 18 }}>Public credit file</span>
+      <h1 style={{ marginTop: 0 }}>KEYCARD, live</h1>
+      <p className="muted small">Every number reconciles to a transaction on Tempo {cfg?.network}. Updates every 15 seconds.</p>
+      <div className="grid" style={{ marginTop: 18 }}>
+        {items.map(([v, label]) => (
+          <div key={label} className="stat"><b>{v}</b><span className="small muted">{label}</span></div>
+        ))}
       </div>
-      <h2>Recent on-chain events</h2>
-      <table>
-        <tbody>
+      <section className="panel" style={{ marginTop: 22 }}>
+        <h2>Recent on-chain events</h2>
+        <ul className="list">
           {s.recent.map((r: any) => (
-            <tr key={r.tx_hash + r.action}>
-              <td>{r.action}</td>
-              <td className="small muted">{new Date(r.created_at).toLocaleString()}</td>
-              <td>{cfg && <a href={`${cfg.explorerUrl}/tx/${r.tx_hash}`} target="_blank" rel="noreferrer">tx</a>}</td>
-            </tr>
+            <li key={r.tx_hash + r.action}>
+              <span className="ic" aria-hidden>◆</span>
+              <span className="grow">
+                <b>{String(r.action).replace(/[._]/g, ' ')}</b>
+                <small>{new Date(r.created_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</small>
+              </span>
+              <span className="amt">{cfg && <a href={`${cfg.explorerUrl}/tx/${r.tx_hash}`} target="_blank" rel="noreferrer">Receipt ↗</a>}</span>
+            </li>
           ))}
-        </tbody>
-      </table>
+        </ul>
+      </section>
       {cfg && (
         <p className="small muted">
-          Contracts: registry <a href={`${cfg.explorerUrl}/address/${(cfg as any).registry}`}>{(cfg as any).registry}</a> · credit file{' '}
-          <a href={`${cfg.explorerUrl}/address/${(cfg as any).lineBook}`}>{(cfg as any).lineBook}</a>
+          Contracts: registry <a href={`${cfg.explorerUrl}/address/${(cfg as any).registry}`} className="mono">{(cfg as any).registry}</a> · credit file{' '}
+          <a href={`${cfg.explorerUrl}/address/${(cfg as any).lineBook}`} className="mono">{(cfg as any).lineBook}</a>
         </p>
       )}
     </main>

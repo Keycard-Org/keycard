@@ -16,7 +16,7 @@ export function CopyText({ text, label }: { text: string; label?: string }) {
     <div className="row">
       <span className="mono" style={{ flex: 1 }}>{text}</span>
       <button
-        className="ghost"
+        className="ghost sm"
         onClick={() => {
           navigator.clipboard.writeText(text).then(() => {
             setCopied(true)

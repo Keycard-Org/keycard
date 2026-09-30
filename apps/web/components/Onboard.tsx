@@ -7,6 +7,7 @@ import { createPasskey, registrationForDeviceKey, restorePasskey, signIn, stored
 import { createDeviceKey, deriveAuthProof, deviceVault, importVaultAndUnlock, unlockDeviceKey } from '@/lib/devicekey'
 import { COUNTRIES } from './countries'
 import { StartOver } from './StartOver'
+import { Stepper } from './Stepper'
 
 type Role = 'borrower' | 'guarantor' | 'merchant'
 export type Me = {
@@ -24,6 +25,12 @@ export type Me = {
  *   4. identity via Self (passport NFC, zero-knowledge; we never see the passport)
  * Calls onReady(me) once the user is signed in AND verified.
  */
+const STEPS: Record<Role, string[]> = {
+  borrower: ['Account', 'Verify', 'Auto-pay', 'Card'],
+  guarantor: ['Account', 'Verify', 'Guarantee'],
+  merchant: ['Account', 'Verify', 'Your shop'],
+}
+
 export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => void }) {
   const [cfg, setCfg] = useState<AppConfig | null>(null)
   const [me, setMe] = useState<Me | null>(null)
@@ -147,15 +154,12 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
 
   return (
     <div>
-      <div className="steps">
-        <span className="on" />
-        <span className={step >= 1 ? 'on' : ''} />
-        <span className={step >= 2 ? 'on' : ''} />
-      </div>
+      <Stepper steps={STEPS[role]} at={step} />
       {err && <p className="error">{err}</p>}
 
       {step === 0 && (
         <div className="panel">
+          <span className="eyebrow">Step 1 · Account</span>
           <h2>{role === 'borrower' ? 'Create your KEYCARD' : role === 'merchant' ? 'Accept KEYCARD payments' : 'Create your guarantor account'}</h2>
           {deviceVault() && (
             <div className="notice small">
@@ -176,11 +180,11 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
             placeholder="e.g. maria.santos"
           />
           <p className="small muted">Shown on your KEYCARD and in your phone’s passkey list. Letters, numbers, . _ -</p>
-          <div className="row" style={{ marginTop: 12 }}>
-            <button className={method === 'passkey' ? '' : 'ghost'} style={{ flex: 1 }} onClick={() => setMethod('passkey')}>
-              Face ID / fingerprint
+          <div className="seg" role="tablist" aria-label="Sign-in method">
+            <button role="tab" aria-selected={method === 'passkey'} className={method === 'passkey' ? 'on' : ''} onClick={() => setMethod('passkey')}>
+              Face ID
             </button>
-            <button className={method === 'password' ? '' : 'ghost'} style={{ flex: 1 }} onClick={() => setMethod('password')}>
+            <button role="tab" aria-selected={method === 'password'} className={method === 'password' ? 'on' : ''} onClick={() => setMethod('password')}>
               Password
             </button>
           </div>
@@ -221,6 +225,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
           <p />
           <button
             className="block"
+            style={{ marginTop: 8 }}
             disabled={busy || !country || excluded || !confirmResidence || username.trim().length < 3 || (method === 'password' && (pw.length < 10 || pw !== pw2))}
             onClick={createAccount}
           >
@@ -254,6 +259,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
 
       {step === 1 && (
         <div className="panel">
+          <span className="eyebrow">Step 2 · Verify</span>
           <h2>Verify you’re a real, unique person</h2>
           <p className="small">
             KEYCARD uses <b>Self</b>: tap your passport’s chip on your phone. Self proves three facts with a
@@ -272,7 +278,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
               </button>
             </>
           )}
-          {polling && <p className="small muted">Waiting for Self… this page updates automatically when your proof arrives.</p>}
+          {polling && <p className="small notice">Waiting for Self… this page updates by itself when your proof arrives.</p>}
           {me?.identity.selfStatus && me.identity.selfStatus !== 'pending' && !me.identity.verified && (
             <p className="error small">Last verification: {me.identity.selfStatus}. Please try again.</p>
           )}

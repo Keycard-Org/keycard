@@ -34,8 +34,8 @@ export function AddMoney({ wallet, balance, cfg, onFunded }: { wallet: Address; 
       <p className="small">
         Repayments are taken from this wallet. Send <b>{cfg.tokenSymbol}</b> on the <b>Tempo</b> network to:
       </p>
-      <div className="row" style={{ alignItems: 'flex-start' }}>
-        <Qr value={wallet} size={140} />
+      <div className="row" style={{ alignItems: 'flex-start', gap: 16 }}>
+        <div style={{ padding: 8, background: '#fff', borderRadius: 14, lineHeight: 0 }}><Qr value={wallet} size={128} /></div>
         <div style={{ flex: 1, minWidth: 180 }}>
           <CopyText text={wallet} />
           <ol className="small muted" style={{ paddingLeft: 18 }}>
@@ -47,7 +47,7 @@ export function AddMoney({ wallet, balance, cfg, onFunded }: { wallet: Address; 
       </div>
       {testnet && (
         <>
-          <button className="ghost block" disabled={busy} onClick={faucet}>
+          <button className="ghost block" style={{ marginTop: 12 }} disabled={busy} onClick={faucet}>
             {busy ? 'Requesting…' : 'Get test dollars (testnet)'}
           </button>
           {msg && <p className="small notice">{msg}</p>}

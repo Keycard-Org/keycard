@@ -105,7 +105,7 @@ async function main() {
     await page.click('text=Skip verification (testnet only)')
     check('testnet skip-verification used', true)
   } else check('Self proof delivered', await selfWebhook(wallet))
-  await page.waitForSelector('text=Your auto-debit', { timeout: 30_000 })
+  await page.waitForSelector('text=Your auto-pay', { timeout: 30_000 })
   check('UI advanced to mandate after Self verification', true)
 
   // fund the borrower's own wallet (their income) on testnet

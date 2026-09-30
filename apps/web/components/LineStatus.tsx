@@ -56,7 +56,7 @@ export function LineStatus({ line, walletBal, onChange }: { line: any; walletBal
     }
   }
   const payNow = act('pay', () => api('/api/lines/pay-now', { method: 'POST' }), 'Payment collected.')
-  const renew = act('renew', () => renewMandateFlow(), 'Auto-debit re-enabled.')
+  const renew = act('renew', () => renewMandateFlow(), 'Auto-pay is back on.')
 
   const PayBtn = ({ label }: { label: string }) => (
     <button className="block" disabled={busy !== null || payable === 0n || !line.mandateActive} onClick={payNow}>
@@ -65,7 +65,7 @@ export function LineStatus({ line, walletBal, onChange }: { line: any; walletBal
   )
   const RenewBtn = () => (
     <button className="block" disabled={busy !== null} onClick={renew}>
-      {busy === 'renew' ? 'Confirm in your wallet…' : 'Re-enable auto-debit'}
+      {busy === 'renew' ? 'Confirm in your wallet…' : 'Turn auto-pay back on'}
     </button>
   )
   const lowBalance = short > 0n && (
@@ -76,7 +76,7 @@ export function LineStatus({ line, walletBal, onChange }: { line: any; walletBal
   if (line.status === 'active') {
     body = owed > 0n ? (
       <div className="notice small">
-        Next statement in <b>{nextIn ?? '—'}</b>: <b>{usd(owed)}</b> will be taken automatically from your wallet.
+        Next bill in <b>{nextIn ?? '—'}</b>: <b>{usd(owed)}</b> will be paid automatically from your wallet.
         {lowBalance}
         {owed > 0n && line.mandateActive && (
           <div style={{ marginTop: 8 }}>
@@ -85,7 +85,7 @@ export function LineStatus({ line, walletBal, onChange }: { line: any; walletBal
         )}
       </div>
     ) : (
-      <p className="small muted">Nothing owed. Next statement in {nextIn ?? '—'}.</p>
+      <p className="small muted">Nothing owed. Next bill in {nextIn ?? '—'}.</p>
     )
   } else if (line.status === 'grace') {
     body = (
@@ -99,7 +99,7 @@ export function LineStatus({ line, walletBal, onChange }: { line: any; walletBal
   } else if (line.status === 'frozen') {
     const why =
       line.freezeReason === 'MandateRevoked'
-        ? 'you revoked the auto-debit'
+        ? 'you turned off auto-pay'
         : line.freezeReason === 'MissedPayment'
           ? 'a missed payment was covered by your guarantor'
           : line.freezeReason === 'Manual'

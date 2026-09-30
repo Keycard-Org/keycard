@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Onboard, type Me } from '@/components/Onboard'
 import { StartOver } from '@/components/StartOver'
+import { Stepper } from '@/components/Stepper'
 import { api, duration, getConfig, short, usd } from '@/lib/api'
 import { explainChainError, getSigner, signMandate } from '@/lib/wallet'
 
@@ -43,9 +44,9 @@ export default function Start() {
     setBusy(true)
     try {
       const signer = await getSigner()
-      setStage(signer.kind === 'passkey' ? 'Approve the auto-debit with your passkey (one prompt)…' : 'Signing the auto-debit…')
+      setStage(signer.kind === 'passkey' ? 'Approve auto-pay with Face ID (one prompt)…' : 'Signing auto-pay…')
       await signMandate(signer, prep.lineId, prep.mandate)
-      setStage('Opening your line on Tempo (funding + issuing your card key)…')
+      setStage('Opening your line on Tempo and issuing your card…')
       await api(`/api/lines/${prep.lineId}/open`, { method: 'POST' })
       router.replace('/card')
     } catch (e: any) {
@@ -59,15 +60,23 @@ export default function Start() {
   return (
     <main className="wrap">
       <h1>Get your KEYCARD</h1>
+      <p className="muted small">A minute, no documents stored, no fees.</p>
       {!me && <Onboard role="borrower" onReady={onReady} />}
       {err && <p className="error">{err}</p>}
 
       {me && prep && (
+        <>
+        <Stepper steps={['Account', 'Verify', 'Auto-pay', 'Card']} at={2} />
         <div className="panel">
-          <h2>Your auto-debit</h2>
-          <p className="small">
-            Your starting limit is <b>{usd(prep.startingLimit)}</b>. At the end of each period you repay what you spent,
-            automatically, from your KEYCARD wallet (<span className="mono">{short(me.user?.wallet)}</span>).
+          <span className="eyebrow">Step 3 · Auto-pay</span>
+          <h2>Your auto-pay</h2>
+          <div className="chips">
+            <div>Starting limit<b>{usd(prep.startingLimit)}</b></div>
+            <div>Bills every<b>{duration(prep.mandate.periodSeconds)}</b></div>
+          </div>
+          <p className="small muted">
+            At the end of each period, what you spent is repaid automatically from your KEYCARD wallet (
+            <span className="mono">{short(me.user?.wallet)}</span>). Keep enough there to cover it.
           </p>
           <MandateTerms prep={prep} />
           <label className="check">
@@ -81,8 +90,9 @@ export default function Start() {
           <button className="block" disabled={!agree || busy} onClick={accept}>
             {busy ? stage ?? 'Working…' : 'Sign & open my line'}
           </button>
-          <p className="small muted">You pay no network fees. KEYCARD sponsors them.</p>
+          <p className="small muted center">You pay no network fees. KEYCARD sponsors them.</p>
         </div>
+        </>
       )}
       {me && <StartOver />}
     </main>
@@ -94,14 +104,24 @@ function MandateTerms({ prep }: { prep: Prepared }) {
   useEffect(() => {
     getConfig().then((c) => setSym(c.tokenSymbol)).catch(() => {})
   }, [])
+  const rows: [string, React.ReactNode][] = [
+    ['Most it can take per period', `${usd(prep.mandate.cap)} ${sym}`],
+    ['Period', duration(prep.mandate.periodSeconds)],
+    ['Can pay only', <>KEYCARD <span className="mono">{short(prep.mandate.recipient)}</span></>],
+    ['Ends', new Date(prep.mandate.expiry * 1000).toISOString().slice(0, 10)],
+  ]
   return (
-    <div className="consent">
-      {`Auto-debit permission, enforced by the Tempo protocol
-• Maximum per period: ${usd(prep.mandate.cap)} (${sym})
-• Period: ${duration(prep.mandate.periodSeconds)}
-• Can pay only: KEYCARD (${prep.mandate.recipient})
-• Ends: ${new Date(prep.mandate.expiry * 1000).toISOString().slice(0, 10)}
-KEYCARD only takes what you actually owe. The cap is the most it could ever take in one period.`}
+    <div className="consent" aria-label="Auto-pay permission, enforced by the Tempo protocol">
+      <span className="eyebrow" style={{ marginBottom: 12 }}>Enforced by the Tempo protocol</span>
+      <ul className="list">
+        {rows.map(([k, v]) => (
+          <li key={k} style={{ padding: '8px 0' }}>
+            <span className="grow small">{k}</span>
+            <span className="small" style={{ color: 'var(--kc-text)' }}>{v}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="small" style={{ margin: '10px 0 0' }}>KEYCARD only takes what you actually owe. The cap is the most it could ever take in one period.</p>
     </div>
   )
 }

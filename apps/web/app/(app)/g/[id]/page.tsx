@@ -63,7 +63,8 @@ export default function GuarantorPage({ params }: { params: Promise<{ id: string
 
   return (
     <main className="wrap">
-      <h1>Back someone you trust</h1>
+      <span className="eyebrow" style={{ marginTop: 18 }}>Family backup</span>
+      <h1 style={{ marginTop: 0 }}>Back someone you trust</h1>
       {inv && (
         <p className="muted">
           <span className="mono">{short(inv.borrowerWallet)}</span> is asking you to guarantee up to <b>{usd(inv.requested)}</b>{' '}
@@ -96,6 +97,10 @@ export default function GuarantorPage({ params }: { params: Promise<{ id: string
       {prep && !done && (
         <div className="panel">
           <h2>Your guarantee</h2>
+          <div className="chips">
+            <div>You’re backing<b>{usd(prep.cap)}</b></div>
+            <div>Most you could afford<b>{usd(prep.maxAllowed)}</b></div>
+          </div>
           <p className="small">
             You can guarantee up to {usd(prep.maxAllowed)}. This guarantee is for <b>{usd(prep.cap)}</b>
             {BigInt(prep.cap) < BigInt(prep.requested) ? ` (less than the ${usd(prep.requested)} requested, to keep it affordable)` : ''}.
@@ -109,13 +114,14 @@ export default function GuarantorPage({ params }: { params: Promise<{ id: string
           <button className="block" disabled={!agree || busy} onClick={sign}>
             {busy ? 'Signing…' : 'Sign guarantee'}
           </button>
-          <p className="small muted">The cap and destination are enforced by the Tempo protocol. You pay no network fees.</p>
+          <p className="small muted center">The cap and destination are enforced by the Tempo protocol. You pay no network fees.</p>
         </div>
       )}
 
       {done && (
-        <div className="panel">
-          <h2 className="ok">You’re backing them.</h2>
+        <div className="panel center">
+          <div style={{ fontSize: 40, lineHeight: 1 }} aria-hidden>✓</div>
+          <h2 className="ok" style={{ marginTop: 10 }}>You’re backing them.</h2>
           <p className="small">
             Their limit is now {usd(done.limit)}. You’ll only ever be charged if they miss a payment and don’t fix it within
             the grace period — and never more than {usd(done.guaranteed)}.

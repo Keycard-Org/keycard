@@ -14,6 +14,8 @@ import { UsernameBanner } from '@/components/UsernameBanner'
 import { MERCHANT_CODE_RE } from '@keycard/sdk'
 import type { Me } from '@/components/Onboard'
 
+const STATUS_LABEL: Record<string, string> = { active: 'Active', grace: 'Overdue', frozen: 'Frozen', defaulted: 'Defaulted', settled: 'Settled' }
+
 export default function CardPage() {
   const router = useRouter()
   const [cfg, setCfg] = useState<AppConfig | null>(null)
@@ -112,15 +114,15 @@ export default function CardPage() {
   }
 
   const revokeMandate = async () => {
-    if (!confirm('Revoking your auto-debit freezes your card immediately. Continue?')) return
+    if (!confirm('Turning off auto-pay freezes your card immediately. Continue?')) return
     setBusy(true)
     setErr(null)
     try {
       const signer = await getSigner()
       const keyId = line.repayKeyId as Address | undefined
-      if (!keyId) throw new Error('Mandate key id unavailable')
+      if (!keyId) throw new Error('Auto-pay permission not found')
       await revokeKey(signer, keyId)
-      setMsg('Auto-debit revoked. Your card will freeze within a few seconds.')
+      setMsg('Auto-pay turned off. Your card will freeze within a few seconds.')
       await load()
     } catch (e: any) {
       setErr(explainChainError(e))
@@ -129,143 +131,176 @@ export default function CardPage() {
     }
   }
 
-  if (!line || !cfg) return <main className="wrap"><p className="muted">Loading your card…</p>{err && <p className="error">{err}</p>}</main>
+  if (!line || !cfg) return <main className="wrap"><p className="muted" style={{ marginTop: 40 }}>Loading your card…</p>{err && <p className="error">{err}</p>}</main>
+
+  const spends = activity?.spends ?? []
+  const repaid = (activity?.movements ?? []).filter((m: any) => m.status === 'confirmed' && (m.kind === 'INST' || m.kind === 'GUAR'))
+  const tierIdx = cfg.tiers.reduce((i: number, t: any, k: number) => (BigInt(line.limit ?? '0') >= BigInt(t) ? k : i), 0)
 
   return (
     <main className="wrap">
       <UsernameBanner username={(me as any)?.user?.username} onSet={load} />
-      <div className={`card ${frozen ? 'frozen' : ''}`}>
-        <div className="label">Available to spend</div>
-        <div className="big">{usd(line.spendable)}</div>
-        <div className="small" style={{ opacity: 0.85 }}>
-          Limit {usd(line.limit)} · owed {usd(line.owed)}
-        </div>
+      <div className={`card ${frozen ? 'frozen' : ''}`} data-status={line.status}>
+        <span className="chip" aria-hidden />
         <div className="foot">
           <span className="mono">{short(line.creditAccount)}</span>
-          <span className="badge">{line.status.toUpperCase()}</span>
+          <span className="badge">{(STATUS_LABEL[line.status] ?? line.status).toUpperCase()}</span>
+        </div>
+        <div className="label">Available to spend</div>
+        <div className="big">{usd(line.spendable)}</div>
+        <div className="small">
+          Limit {usd(line.limit)} · owed {usd(line.owed)}
         </div>
       </div>
 
-      <LineStatus line={line} walletBal={walletBal} onChange={load} />
+      <nav className="actions" aria-label="Quick actions">
+        <a href={frozen ? '#status' : '#pay'}><i aria-hidden>↗</i>Pay</a>
+        <a href="#repay"><i aria-hidden>↺</i>Repay</a>
+        <a href="#add"><i aria-hidden>+</i>Add money</a>
+        <a href="#physical"><i aria-hidden>◈</i>Card</a>
+      </nav>
+
+      <div id="status">
+        <LineStatus line={line} walletBal={walletBal} onChange={load} />
+      </div>
       {err && <p className="error">{err}</p>}
       {msg && <p className="notice">{msg}</p>}
 
       {!frozen && (
-        <div className="panel">
+        <section className="panel" id="pay">
           <h2>Pay</h2>
           <label htmlFor="m">Merchant code</label>
-          <input id="m" list="merchant-list" placeholder="e.g. 7QX2MD" value={merchant} onChange={(e) => setMerchant(e.target.value.toUpperCase().trim())} />
+          <input id="m" list="merchant-list" autoCapitalize="characters" placeholder="e.g. 7QX2MD" value={merchant} onChange={(e) => setMerchant(e.target.value.toUpperCase().trim())} />
           <datalist id="merchant-list">
             {cfg.merchants.map((m) => (
               <option key={m.code} value={m.code}>{m.label}</option>
             ))}
           </datalist>
           {merchantName && <p className="small ok">Paying: {merchantName}</p>}
-          {merchantName === '' && <p className="small error">No KEYCARD merchant with this code.</p>}
+          {merchantName === '' && <p className="small warn">No KEYCARD merchant with this code.</p>}
           <label htmlFor="a">Amount (USD)</label>
-          <input id="a" inputMode="decimal" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
-          <p />
-          <button className="block" disabled={busy || !merchantName || !amount} onClick={pay}>
+          <input id="a" className="amount-input" inputMode="decimal" placeholder="$0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <button className="block" style={{ marginTop: 14 }} disabled={busy || !merchantName || !amount} onClick={pay}>
             {busy ? 'Confirming…' : 'Pay with KEYCARD'}
           </button>
-          <p className="small muted">
-            Your card can only pay through the KEYCARD network. The blockchain enforces this, not us.{' '}
+          <p className="small muted" style={{ marginTop: 12 }}>
+            Your card can only pay KEYCARD merchants. The blockchain enforces this, not us.{' '}
             <a href="#" onClick={(e) => (e.preventDefault(), tryRawAddress())}>See it refuse a random wallet</a>
           </p>
+        </section>
+      )}
+
+      <section className="panel" id="activity">
+        <div className="row between">
+          <h2 style={{ margin: 0 }}>Activity</h2>
+          <span className="small muted">Receipts are on-chain</span>
+        </div>
+        {!activity ? (
+          <p className="empty">Loading…</p>
+        ) : spends.length + repaid.length === 0 ? (
+          <p className="empty">No payments yet. Your first one shows up here.</p>
+        ) : (
+          <ul className="list">
+            {spends.map((s: any) => (
+              <li key={s.tx_hash}>
+                <span className="ic" aria-hidden>↗</span>
+                <span className="grow">
+                  <b>{s.label ?? s.merchant_code ?? 'Payment'}</b>
+                  <small>{s.status === 'settled' ? 'Paid to merchant' : s.status === 'received' ? 'Settling to merchant…' : s.status.replace(/_/g, ' ')}</small>
+                </span>
+                <span className="amt">
+                  −{usd(s.amount)}
+                  <a href={`${cfg.explorerUrl}/tx/${s.tx_hash}`} target="_blank" rel="noreferrer">Receipt ↗</a>
+                </span>
+              </li>
+            ))}
+            {repaid.map((m: any) => (
+              <li key={m.tx_hash}>
+                <span className="ic in" aria-hidden>↺</span>
+                <span className="grow">
+                  <b>{m.kind === 'INST' ? 'Auto-pay' : 'Paid by your family backup'}</b>
+                  <small>{m.kind === 'INST' ? 'Bill paid' : 'Covered a missed bill'}</small>
+                </span>
+                <span className="amt ok">
+                  +{usd(m.amount)}
+                  <a href={`${cfg.explorerUrl}/tx/${m.tx_hash}`} target="_blank" rel="noreferrer">Receipt ↗</a>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="panel" id="repay">
+        <div className="row between">
+          <h2 style={{ margin: 0 }}>Auto-pay</h2>
+          <span className={`small ${line.mandateActive ? 'ok' : 'warn'}`}>{line.mandateActive ? '● On' : '● Off'}</span>
+        </div>
+        <div className="chips">
+          <div>Next bill<b>{line.nextDue ? new Date(line.nextDue).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : '—'}</b></div>
+          <div>Your wallet holds<b>{walletBal === null ? '—' : usd(walletBal)}</b></div>
+        </div>
+        <p className="small muted">
+          Bills are paid from your KEYCARD wallet <span className="mono">{short(me?.user?.wallet)}</span>. Keep at least what you owe there.
+        </p>
+        <span className="eyebrow" style={{ marginTop: 16 }}>Your limit ladder · on-time streak {line.onTimeCount}</span>
+        <div className="stepper" style={{ marginTop: 6 }}>
+          {cfg.tiers.map((t: any, i: number) => (
+            <div key={i} className={i < tierIdx ? 'done' : i === tierIdx ? 'on' : ''}>{usd(t)}</div>
+          ))}
+        </div>
+        <p className="small muted">Two on-time bills in a row move you up a step.</p>
+      </section>
+
+      {me?.user && (
+        <div id="add">
+          <AddMoney wallet={me.user.wallet} balance={walletBal} cfg={cfg} onFunded={load} />
         </div>
       )}
 
-      <div className="panel">
-        <div className="row between">
-          <h2 style={{ margin: 0 }}>Repayment</h2>
-          <span className="small muted">on-time streak: {line.onTimeCount}</span>
-        </div>
-        <p className="small">
-          Next statement: <b>{line.nextDue ? new Date(line.nextDue).toLocaleString() : '—'}</b>. Your wallet{' '}
-          <span className="mono">{short(me?.user?.wallet)}</span> holds <b>{walletBal === null ? '—' : usd(walletBal)}</b>.
-          Keep at least what you owe there.
-        </p>
-        <p className="small muted">Two on-time statements in a row raise your limit: {cfg.tiers.map((t) => usd(t)).join(' → ')}.</p>
+      <div id="physical">
+        {(!frozen || ['active', 'frozen'].includes(line.card?.status)) && <PhysicalCard card={line.card} onChange={load} canLink={!frozen} />}
       </div>
 
-      {(!frozen || ['active', 'frozen'].includes(line.card?.status)) && <PhysicalCard card={line.card} onChange={load} canLink={!frozen} />}
-
-      {me?.user && <AddMoney wallet={me.user.wallet} balance={walletBal} cfg={cfg} onFunded={load} />}
-
-      <div className="panel">
-        <h2>Family guarantee</h2>
+      <section className="panel" id="family">
+        <h2>Family backup</h2>
         {line.guarantorWallet ? (
           <p className="small ok">
-            Guaranteed by <span className="mono">{short(line.guarantorWallet)}</span> for up to {usd(line.guaranteed)}.
+            Backed by <span className="mono">{short(line.guarantorWallet)}</span> for up to {usd(line.guaranteed)}.
           </p>
         ) : (
           <>
-            <p className="small">
-              A relative with income can back your line. They sign one capped key on their own wallet; it pays only if you
-              miss a payment. A guarantee raises your limit one level.
+            <p className="small muted">
+              A relative with income can back your line. They sign one capped permission on their own wallet, which is
+              charged only if you miss a bill. A backup raises your limit a level.
             </p>
             <label htmlFor="g">Amount to ask for (USD)</label>
             <input id="g" inputMode="decimal" value={guarAmount} onChange={(e) => setGuarAmount(e.target.value)} />
-            <p />
-            <button className="ghost block" onClick={inviteGuarantor}>
+            <button className="ghost block" style={{ marginTop: 12 }} onClick={inviteGuarantor}>
               Create invite link
             </button>
             {invite && (
-              <p className="small">
-                Send this to your guarantor: <span className="mono">{invite}</span>
-              </p>
+              <div className="notice small">
+                Send this to them: <span className="mono">{invite}</span>
+              </div>
             )}
           </>
         )}
-      </div>
+      </section>
 
-      <div className="panel">
-        <h2>Activity</h2>
-        {!activity ? (
-          <p className="small muted">Loading…</p>
-        ) : (
-          <table>
-            <tbody>
-              {activity.spends.map((s: any) => (
-                <tr key={s.tx_hash}>
-                  <td>
-                    {s.label ?? s.merchant_code ?? 'Payment'}{' '}
-                    <span className="small muted">{s.status === 'settled' ? '· settled' : s.status === 'received' ? '· settling' : `· ${s.status.replace(/_/g, ' ')}`}</span>
-                  </td>
-                  <td>{usd(s.amount)}</td>
-                  <td>
-                    <a href={`${cfg.explorerUrl}/tx/${s.tx_hash}`} target="_blank" rel="noreferrer">tx</a>
-                  </td>
-                </tr>
-              ))}
-              {activity.movements
-                .filter((m: any) => m.status === 'confirmed' && (m.kind === 'INST' || m.kind === 'GUAR'))
-                .map((m: any) => (
-                  <tr key={m.tx_hash}>
-                    <td>{m.kind === 'INST' ? 'Auto-repayment' : 'Guarantor paid'}</td>
-                    <td>{usd(m.amount)}</td>
-                    <td>
-                      <a href={`${cfg.explorerUrl}/tx/${m.tx_hash}`} target="_blank" rel="noreferrer">tx</a>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      <div className="row between">
-        <button className="danger" disabled={busy || !line.mandateActive || ['defaulted', 'settled'].includes(line.status)} onClick={revokeMandate}>
-          Revoke auto-debit
+      <section className="panel" id="settings">
+        <h2>Settings</h2>
+        <button className="danger block" disabled={busy || !line.mandateActive || ['defaulted', 'settled'].includes(line.status)} onClick={revokeMandate}>
+          Turn off auto-pay
         </button>
-        <button className="ghost" onClick={() => (signOut(), router.replace('/'))}>
+        <p className="small muted">Turning off auto-pay freezes your card straight away. You can turn it back on.</p>
+        <button className="ghost block" style={{ marginTop: 8 }} onClick={() => (signOut(), router.replace('/'))}>
           Sign out
         </button>
-      </div>
-      <StartOver label="Use a different account on this browser" />
-      <p className="small muted">
-        Public credit file: every line event is recorded on-chain.{' '}
-        <Link href="/stats">See live stats</Link>
+        <StartOver label="Use a different account on this browser" />
+      </section>
+      <p className="small muted center">
+        Every line event is recorded on-chain. <Link href="/stats">See the public credit file</Link>
       </p>
     </main>
   )

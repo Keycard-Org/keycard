@@ -7,7 +7,7 @@ export function UsernameBanner({ username, onSet }: { username?: string | null; 
   const [v, setV] = useState('')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  if (username) return <p className="small muted" style={{ margin: '4px 0 12px' }}>Signed in as <b>@{username}</b></p>
+  if (username) return <p className="muted" style={{ margin: '6px 2px 14px', fontSize: 15 }}>Hi, <b style={{ color: 'var(--kc-text)' }}>@{username}</b></p>
   const save = async () => {
     setErr(null)
     setBusy(true)
