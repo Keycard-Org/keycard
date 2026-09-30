@@ -4,17 +4,28 @@ import { api, short, usd } from '@/lib/api'
 import { explainChainError, linkPhysicalCard } from '@/lib/wallet'
 import { nfcSupportedHint } from '@/lib/halo'
 
-/** Borrower: link / freeze a physical NFC KEYCARD (Burner card, chip slot 1). */
-export function PhysicalCard({ card, onChange, canLink = true }: { card: { address: string; limit: string; status: string } | null; onChange: () => void; canLink?: boolean }) {
+/**
+ * Borrower: link a physical NFC KEYCARD (Burner card, chip slot 1), freeze/unfreeze it (reversible, limit 0 on-chain),
+ * or unlink it (revokes the key: Tempo never re-authorises a revoked key on the same account).
+ */
+export function PhysicalCard({
+  card,
+  onChange,
+  canLink = true,
+}: {
+  card: { address: string; limit: string; status: string } | null
+  onChange: () => void
+  canLink?: boolean
+}) {
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
-  const link = async () => {
+  const run = (fn: () => Promise<unknown>, done: string) => async () => {
     setErr(null)
     setBusy(true)
     try {
-      await linkPhysicalCard(setStatus)
-      setStatus('Card linked.')
+      await fn()
+      setStatus(done)
       onChange()
     } catch (e: any) {
       setErr(explainChainError(e))
@@ -23,32 +34,33 @@ export function PhysicalCard({ card, onChange, canLink = true }: { card: { addre
       setBusy(false)
     }
   }
-  const freeze = async () => {
-    if (!confirm('Freeze this physical card? It stops working immediately (your phone card keeps working).')) return
-    setBusy(true)
-    setErr(null)
-    try {
-      await api('/api/card/freeze', { method: 'POST' })
-      setStatus('Physical card frozen on-chain.')
-      onChange()
-    } catch (e: any) {
-      setErr(e.message)
-    } finally {
-      setBusy(false)
-    }
+  const link = run(() => linkPhysicalCard(setStatus), 'Card linked.')
+  const freeze = run(() => api('/api/card/freeze', { method: 'POST' }), 'Card frozen. Tap Unfreeze to use it again.')
+  const unfreeze = run(() => api('/api/card/unfreeze', { method: 'POST' }), 'Card unfrozen.')
+  const unlink = () => {
+    if (!confirm('Unlink this card permanently from this KEYCARD? You will NOT be able to link this same card to this KEYCARD again (Tempo protocol rule). To pause it, use Freeze instead.')) return
+    void run(() => api('/api/card/unlink', { method: 'POST' }), 'Card unlinked.')()
   }
-  const active = card && card.status === 'active'
+
+  const linked = card && (card.status === 'active' || card.status === 'frozen')
   return (
     <div className="panel">
       <h2>Physical card</h2>
-      {active ? (
+      {linked ? (
         <>
-          <p className="small ok">
-            Linked: <span className="mono">{short(card!.address)}</span> · tap limit {usd(card!.limit)} per period
+          <p className={`small ${card!.status === 'active' ? 'ok' : 'warn'}`}>
+            {card!.status === 'active' ? 'Active' : 'Frozen'}: <span className="mono">{short(card!.address)}</span> · tap limit{' '}
+            {usd(card!.limit)} per period
           </p>
           <p className="small muted">Tap it on any KEYCARD merchant’s phone to pay. Lost it? Freeze it instantly.</p>
-          <button className="danger block" disabled={busy} onClick={freeze}>Freeze & unlink physical card</button>
-          <p className="small muted">Freezing also unlinks it, so you can link this card to another KEYCARD later.</p>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {card!.status === 'active' ? (
+              <button className="danger block" disabled={busy} onClick={freeze}>Freeze card</button>
+            ) : (
+              <button className="block" disabled={busy || !canLink} onClick={unfreeze}>Unfreeze card</button>
+            )}
+            <button className="ghost block" disabled={busy} onClick={unlink}>Unlink card permanently</button>
+          </div>
         </>
       ) : (
         <>

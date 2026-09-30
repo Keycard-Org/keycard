@@ -34,7 +34,7 @@ export async function linkCard(p: { wallet: Address; cardAddress: Address; signa
 
   const [row] = await sql`SELECT * FROM lines WHERE borrower_wallet=${wallet} AND status='active'`
   if (!row) throw new UserError('your credit line must be active to link a card')
-  if (row.card_key_id && row.card_status === 'active') throw new UserError('a physical card is already linked; freeze it first')
+  if (row.card_key_id) throw new UserError('a physical card is already linked to this KEYCARD; unlink it first')
   const [taken] = await sql`SELECT id FROM lines WHERE card_key_id=${recovered} AND id<>${row.id}`
   if (taken) throw new UserError('this card is linked to another KEYCARD')
 
@@ -47,23 +47,34 @@ export async function linkCard(p: { wallet: Address; cardAddress: Address; signa
     merchants: await activeMerchants(),
     expiry: Math.floor(new Date(row.term_end).getTime() / 1000),
   })
-  await resilient(
-    'authorize-card-key',
-    () =>
-      Actions.accessKey.authorizeSync(clientFor(creditRoot), {
-        accessKey: { address: recovered, type: 'secp256k1' },
-        ...pol,
-        feePayer: treasury,
-      } as any),
-    async () => (await getKey(row.credit_account, recovered)).exists,
-  )
+  const existing = await getKey(row.credit_account, recovered)
+  const [unlinked] = await sql`SELECT 1 FROM audit_log WHERE line_id=${row.id} AND action='card.unlinked' AND detail->>'card'=${recovered} LIMIT 1`
+  if (existing.revoked || unlinked)
+    throw new UserError('this card was unlinked from this KEYCARD. Tempo never re-authorises a revoked key on the same account, so it can only be linked to a different KEYCARD. (Use Freeze instead of Unlink to pause a card.)', 409)
+  try {
+    await resilient(
+      'authorize-card-key',
+      () =>
+        Actions.accessKey.authorizeSync(clientFor(creditRoot), {
+          accessKey: { address: recovered, type: 'secp256k1' },
+          ...pol,
+          feePayer: treasury,
+        } as any),
+      async () => (await getKey(row.credit_account, recovered)).exists,
+    )
+  } catch (e: any) {
+    const m = String(e?.details ?? e?.shortMessage ?? e?.message ?? e)
+    if (/KeyAlreadyRevoked/i.test(m))
+      throw new UserError('this card was unlinked from this KEYCARD and cannot be re-linked to it (Tempo protocol rule). Link it to a different KEYCARD.', 409)
+    throw new UserError(`could not link card: ${m.slice(0, 160)}`, 502)
+  }
   await sql`UPDATE lines SET card_key_id=${recovered}, card_limit=${cardLimit.toString()}, card_status='active',
             card_linked_at=now(), updated_at=now() WHERE id=${row.id}`
   await audit({ lineId: row.id, actor: 'borrower', action: 'card.linked', detail: { card: recovered, cardLimit } })
   return { cardAddress: recovered, cardLimit: cardLimit.toString() }
 }
 
-export async function freezeCard(wallet: Address) {
+export async function unlinkCard(wallet: Address) {
   const [row] = await sql`SELECT * FROM lines WHERE borrower_wallet=${lower(wallet)} AND card_key_id IS NOT NULL
                           ORDER BY created_at DESC LIMIT 1`
   if (!row) throw new UserError('no physical card linked')
@@ -77,8 +88,8 @@ export async function freezeCard(wallet: Address) {
     },
   )
   // revoked keyIds can never be re-authorised: clear it so a NEW card (or slot) can be linked
-  await sql`UPDATE lines SET card_status='frozen', card_key_id=NULL, updated_at=now() WHERE id=${row.id}`
-  await audit({ lineId: row.id, actor: 'borrower', action: 'card.frozen', detail: { card: row.card_key_id } })
+  await sql`UPDATE lines SET card_status='unlinked', card_key_id=NULL, updated_at=now() WHERE id=${row.id}`
+  await audit({ lineId: row.id, actor: 'borrower', action: 'card.unlinked', detail: { card: row.card_key_id } })
   return { ok: true }
 }
 
@@ -98,7 +109,26 @@ export async function cardInfo(cardAddress: Address) {
 export async function releaseCard(cardAddress: Address) {
   const [row] = await sql`SELECT borrower_wallet FROM lines WHERE card_key_id=${lower(cardAddress)} ORDER BY created_at DESC LIMIT 1`
   if (!row) throw new UserError('card is not linked to any line', 404)
-  await freezeCard(row.borrower_wallet)
+  await unlinkCard(row.borrower_wallet)
   await audit({ actor: 'admin', action: 'card.released', detail: { card: lower(cardAddress) } })
   return { ok: true, releasedFrom: row.borrower_wallet.slice(0, 10) }
+}
+
+/** Reversible pause: card key limit 0 on-chain (the key stays authorised, so it can be unfrozen). */
+export async function setCardFrozen(wallet: Address, frozen: boolean) {
+  const [row] = await sql`SELECT * FROM lines WHERE borrower_wallet=${lower(wallet)} AND card_key_id IS NOT NULL
+                          ORDER BY created_at DESC LIMIT 1`
+  if (!row) throw new UserError('no physical card linked')
+  if (!frozen && row.status !== 'active') throw new UserError('your line must be active to unfreeze the card')
+  const limit = frozen ? 0n : BigInt(row.card_limit)
+  const creditRoot = Account.fromSecp256k1(open(row.credit_root_enc))
+  await Actions.accessKey.updateLimitSync(clientFor(creditRoot), {
+    accessKey: row.card_key_id,
+    token: net.token,
+    limit,
+    feePayer: treasury,
+  } as any)
+  await sql`UPDATE lines SET card_status=${frozen ? 'frozen' : 'active'}, updated_at=now() WHERE id=${row.id}`
+  await audit({ lineId: row.id, actor: 'borrower', action: frozen ? 'card.frozen' : 'card.unfrozen', detail: { card: row.card_key_id } })
+  return { ok: true, status: frozen ? 'frozen' : 'active' }
 }

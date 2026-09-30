@@ -185,7 +185,7 @@ export default function CardPage() {
         <p className="small muted">Two on-time statements in a row raise your limit: {cfg.tiers.map((t) => usd(t)).join(' → ')}.</p>
       </div>
 
-      {(!frozen || line.card?.status === 'active') && <PhysicalCard card={line.card} onChange={load} canLink={!frozen} />}
+      {(!frozen || ['active', 'frozen'].includes(line.card?.status)) && <PhysicalCard card={line.card} onChange={load} canLink={!frozen} />}
 
       {me?.user && <AddMoney wallet={me.user.wallet} balance={walletBal} cfg={cfg} onFunded={load} />}
 

@@ -13,7 +13,7 @@ import { selfEnabled, startSelfSession, handleSelfWebhook, devVerify, devVerifyE
 import { stats } from './stats'
 import { activateKeyAuthorization, checkKeyAuthorization } from './keyauth'
 import { fetchVault, storeBackup, usernameAvailable } from './passwordlogin'
-import { cardChallenge, cardInfo, freezeCard, linkCard, releaseCard } from './cards'
+import { cardChallenge, cardInfo, linkCard, releaseCard, setCardFrozen, unlinkCard } from './cards'
 import { confirmRenewMandate, maybeUnfreeze, payNow, renewMandate } from './lifecycle'
 import { getMerchant, merchantDashboard, registerMerchant } from './merchants'
 import { settlement, publicClient } from './chain'
@@ -317,7 +317,9 @@ app.post('/api/card/link', requireSession, async (c) => {
   const b = z.object({ cardAddress: addr, signature: z.string().regex(/^0x[0-9a-fA-F]{130}$/) }).parse(await c.req.json())
   return c.json(await linkCard({ wallet: c.get('wallet'), cardAddress: b.cardAddress, signature: b.signature as Hex }))
 })
-app.post('/api/card/freeze', requireSession, async (c) => c.json(await freezeCard(c.get('wallet'))))
+app.post('/api/card/freeze', requireSession, async (c) => c.json(await setCardFrozen(c.get('wallet'), true)))
+app.post('/api/card/unfreeze', requireSession, async (c) => c.json(await setCardFrozen(c.get('wallet'), false)))
+app.post('/api/card/unlink', requireSession, async (c) => c.json(await unlinkCard(c.get('wallet'))))
 app.get('/api/cards/:address', async (c) => c.json(await cardInfo(addr.parse(c.req.param('address')))))
 
 // ---------------- merchants ----------------

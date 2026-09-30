@@ -126,6 +126,9 @@ async function main() {
   await Actions.accessKey.authorizeSync(createClient({ account: b.root, chain, transport: relayTransport }), { accessKey: { address: prep.mandate.keyId, type: 'secp256k1' }, ...pol, feePayer: true } as any)
   const line = await api(`/api/lines/${prep.lineId}/open`, { token, method: 'POST' })
   check('line open', line.status === 'active')
+  // a real borrower keeps money in their wallet so statements are auto-paid
+  await Actions.faucet.fund(createClient({ chain, transport: http(net.rpcUrl) }), { account: wallet })
+  await waitFor('borrower funded', async () => (await bal(wallet)) > 0n, 60)
 
   // link: card signs the server challenge digest
   const ch = await api('/api/card/challenge', { token, method: 'POST' })
@@ -150,14 +153,26 @@ async function main() {
   try { await Actions.token.transferSync(cardClient, { token: net.token, to: settle, amount: u('5'), memo: encodePayMemo(shop.code), feePayer: true } as any) } catch (e: any) { over = String(e?.details ?? e?.shortMessage) }
   check('card REFUSED over its $10 tap limit (protocol)', /SpendingLimitExceeded/.test(over), over.slice(0, 80))
 
-  // freeze
+  // freeze (reversible) → refused; unfreeze → pays again
   await api('/api/card/freeze', { token, method: 'POST' })
-  let frozen = ''
-  try { await Actions.token.transferSync(cardClient, { token: net.token, to: settle, amount: u('1'), memo: encodePayMemo(shop.code), feePayer: true } as any) } catch (e: any) { frozen = String(e?.details ?? e?.shortMessage) }
-  check('frozen card REFUSED by protocol', /KeyAlreadyRevoked|KeyNotFound|revoked/i.test(frozen), frozen.slice(0, 80))
-  let gone = false
-  try { await api(`/api/cards/${chipAddr}`) } catch { gone = true }
-  check('frozen card no longer resolves for merchants', gone)
+  check('frozen card REFUSED by protocol', /SpendingLimitExceeded/.test(await (async () => { try { await Actions.token.transferSync(cardClient, { token: net.token, to: settle, amount: u('1'), memo: encodePayMemo(shop.code), feePayer: true } as any); return 'OK' } catch (e: any) { return String(e?.details ?? e?.shortMessage) } })()))
+  let frozenLookup = ''
+  try { await api(`/api/cards/${chipAddr}`) } catch (e: any) { frozenLookup = e.message }
+  check('frozen card: merchant lookup says frozen by owner', /frozen by its owner/.test(frozenLookup))
+  await api('/api/card/unfreeze', { token, method: 'POST' })
+  await new Promise((r) => setTimeout(r, env.PERIOD_SECONDS * 1000 + 30_000)) // tap limit resets next period
+  const again = (await Actions.token.transferSync(cardClient, { token: net.token, to: settle, amount: u('1'), memo: encodePayMemo(shop.code), feePayer: true } as any)) as any
+  check('unfrozen card pays again', again.receipt.status === 'success')
+
+  // unlink (revoke) → refused; re-link same card → clear 409, not a crash
+  await api('/api/card/unlink', { token, method: 'POST' })
+  let unl = ''
+  try { await Actions.token.transferSync(cardClient, { token: net.token, to: settle, amount: u('1'), memo: encodePayMemo(shop.code), feePayer: true } as any) } catch (e: any) { unl = String(e?.details ?? e?.shortMessage) }
+  check('unlinked card REFUSED by protocol', /KeyAlreadyRevoked|KeyNotFound|revoked/i.test(unl), unl.slice(0, 70))
+  const ch3 = await api('/api/card/challenge', { token, method: 'POST' })
+  let relink = ''
+  try { await api('/api/card/link', { token, body: { cardAddress: chipAddr, signature: chipSign(ch3.digest) } }) } catch (e: any) { relink = e.message }
+  check('re-linking an unlinked card gives a clear 409 (not internal error)', /409/.test(relink) && /re-?link|re-authorises|different KEYCARD/i.test(relink), relink.slice(0, 90))
 
   console.log(`\n${results.filter((r) => r.startsWith('PASS')).length}/${results.length} checks passed`)
   await sql.end()
