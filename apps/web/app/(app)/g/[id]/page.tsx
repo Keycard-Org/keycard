@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useState } from 'react'
 import { Onboard, type Me } from '@/components/Onboard'
 import { api, short, toBase, usd } from '@/lib/api'
 import { explainChainError, getSigner, signGuarantee } from '@/lib/wallet'
+import { AccountBar, WrongAccount } from '@/components/AccountBar'
 
 type Invite = { inviteId: string; status: string; borrowerWallet: string; requested: string; termEnd: string; termMonths: number }
 type Prepared = {
@@ -75,8 +76,10 @@ export default function GuarantorPage({ params }: { params: Promise<{ id: string
       {inv && inv.status !== 'open' && inv.status !== 'prepared' && !done && <p className="notice">This invite is {inv.status}.</p>}
 
       {!me && inv && <Onboard role="guarantor" onReady={onReady} />}
+      {me && <AccountBar me={me} />}
+      {me && me.user?.role !== 'guarantor' && <WrongAccount me={me} want="family backup" here="Backing someone" />}
 
-      {me && !prep && !done && (
+      {me && me.user?.role === 'guarantor' && !prep && !done && (
         <div className="panel">
           <h2>Can you afford this?</h2>
           <p className="small">

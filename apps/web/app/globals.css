@@ -162,7 +162,7 @@ label { display: block; font-size: 13px; font-weight: 500; color: var(--kc-text-
 .card .foot .mono { opacity: 0.7; font-size: 11px; }
 .card .badge { background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(6px); }
 .card[data-status='grace'] { --tint: rgba(255, 200, 87, 0.45); --edge: rgba(255, 200, 87, 0.6); }
-.card[data-status='frozen'], .card.frozen { --tint: rgba(168, 220, 255, 0.28); --edge: rgba(168, 220, 255, 0.5); filter: saturate(0.35); }
+.card[data-status='frozen'] { --tint: rgba(168, 220, 255, 0.28); --edge: rgba(168, 220, 255, 0.5); filter: saturate(0.35); }
 .card[data-status='defaulted'] { --tint: rgba(255, 92, 92, 0.45); --edge: rgba(255, 92, 92, 0.6); filter: none; }
 .card[data-status='settled'] { --tint: rgba(255, 255, 255, 0.45); --edge: rgba(255, 255, 255, 0.6); filter: none; }
 
@@ -211,3 +211,13 @@ tr:last-child td { border-bottom: 0; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* account bar */
+.account-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 8px 8px 14px; margin: 10px 0 4px; border-radius: var(--kc-radius-pill); background: var(--kc-surface-1); border: 1px solid var(--kc-hairline); }
+.account-bar .role { margin-left: 8px; font: 500 10px/1 var(--font-mono-stack); letter-spacing: 0.12em; text-transform: uppercase; color: var(--kc-accent-hi); border: 1px solid rgba(179, 169, 255, 0.35); padding: 3px 7px; border-radius: 99px; vertical-align: 1px; }
+.btn.block { display: flex; width: 100%; margin-top: 8px; }
+.btn.ghostlink { background: transparent; color: var(--kc-text); border: 1px solid rgba(255, 255, 255, 0.16); }
+.btn.ghostlink:hover { background: rgba(255, 255, 255, 0.06); box-shadow: none; }
+
+.account-bar button { flex: none; white-space: nowrap; }
+.account-bar > span { min-width: 0; }

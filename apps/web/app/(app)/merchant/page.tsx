@@ -6,6 +6,7 @@ import { Qr, CopyText } from '@/components/Qr'
 import { api, getConfig, short, usd, type AppConfig } from '@/lib/api'
 import { signOut } from '@/lib/wallet'
 import { TapToCharge } from '@/components/TapToCharge'
+import { AccountBar, WrongAccount } from '@/components/AccountBar'
 
 type Dash = {
   merchant: { code: string; label: string; owner: string; settleTo: string; settlement: string }
@@ -32,7 +33,7 @@ export default function MerchantPage() {
   }, [])
   const onReady = useCallback((m: Me) => {
     setMe(m)
-    void load()
+    if (m.user?.role === 'merchant') void load()
   }, [load])
 
   useEffect(() => {
@@ -71,8 +72,10 @@ export default function MerchantPage() {
       )}
       {err && <p className="error">{err}</p>}
       {!me && <Onboard role="merchant" onReady={onReady} />}
+      {me && <AccountBar me={me} />}
+      {me && me.user?.role !== 'merchant' && <WrongAccount me={me} want="merchant" here="Accepting payments" />}
 
-      {me && !dash && (
+      {me && me.user?.role === 'merchant' && !dash && (
         <div className="panel">
           <span className="eyebrow">Step 3 · Your shop</span>
           <h2>Your business</h2>
@@ -131,7 +134,7 @@ export default function MerchantPage() {
               History is read from the Tempo blockchain. Settled to your KEYCARD wallet <span className="mono">{short(dash.merchant.settleTo)}</span>.
             </p>
           </section>
-          <button className="ghost block" onClick={() => (signOut(), location.reload())}>Sign out</button>
+          <button className="ghost block" style={{ marginTop: 8 }} onClick={() => (signOut(), location.reload())}>Sign out</button>
         </>
       )}
     </main>

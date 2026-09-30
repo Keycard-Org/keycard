@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Onboard, type Me } from '@/components/Onboard'
 import { StartOver } from '@/components/StartOver'
 import { Stepper } from '@/components/Stepper'
+import { AccountBar, WrongAccount } from '@/components/AccountBar'
 import { api, duration, getConfig, short, usd } from '@/lib/api'
 import { explainChainError, getSigner, signMandate } from '@/lib/wallet'
 
@@ -28,6 +29,7 @@ export default function Start() {
   const onReady = useCallback(
     async (m: Me) => {
       setMe(m)
+      if (m.user?.role !== 'borrower') return
       if (m.line && m.line.status !== 'preparing') return router.replace('/card')
       try {
         setPrep(await api<Prepared>('/api/lines/prepare', { method: 'POST' }))
@@ -62,6 +64,8 @@ export default function Start() {
       <h1>Get your KEYCARD</h1>
       <p className="muted small">A minute, no documents stored, no fees.</p>
       {!me && <Onboard role="borrower" onReady={onReady} />}
+      {me && <AccountBar me={me} />}
+      {me && me.user?.role !== 'borrower' && <WrongAccount me={me} want="cardholder" here="Getting a KEYCARD" />}
       {err && <p className="error">{err}</p>}
 
       {me && prep && (
