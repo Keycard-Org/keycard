@@ -70,9 +70,10 @@ async function main() {
   await page.goto(`${WEB}/start`)
   await page.selectOption('#country', 'PHL')
   await page.check('text=I confirm this is my country of residence')
+  const uname = 'bt' + Date.now().toString().slice(-8)
+  await page.fill('#un', uname)
   if (PASSWORD) {
     await page.click('button:has-text("Password")')
-    await page.fill('#un', 'bt' + Date.now().toString().slice(-8))
     await page.fill('#pw', 'correct-horse-battery')
     await page.fill('#pw2', 'correct-horse-battery')
     await page.click('text=Create password account')
@@ -120,6 +121,7 @@ async function main() {
   await page.waitForURL(`${WEB}/card`, { timeout: 90_000 })
   if (!PASSWORD) check('auto-debit needed exactly ONE passkey signature', (await signCount()) - before === 1, `${(await signCount()) - before} signature(s)`)
   await page.waitForSelector('text=Available to spend', { timeout: 30_000 })
+  check('card greets the user by @username', ((await page.textContent('body')) ?? '').includes(`@${uname}`), uname)
   const available = await page.textContent('.card .big')
   check('line opened, card shows available credit', /\$20\.00/.test(available ?? ''), available ?? '')
 

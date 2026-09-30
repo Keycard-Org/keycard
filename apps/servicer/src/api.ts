@@ -12,7 +12,7 @@ import { confirmGuarantee, createInvite, getInvite, prepareGuarantee } from './g
 import { selfEnabled, startSelfSession, handleSelfWebhook, devVerify, devVerifyEnabled } from './self'
 import { stats } from './stats'
 import { activateKeyAuthorization, checkKeyAuthorization } from './keyauth'
-import { fetchVault, storeBackup, usernameAvailable } from './passwordlogin'
+import { fetchVault, normUsername, storeBackup, usernameAvailable } from './passwordlogin'
 import { cardChallenge, cardInfo, linkCard, releaseCard, setCardFrozen, unlinkCard } from './cards'
 import { confirmRenewMandate, maybeUnfreeze, payNow, renewMandate } from './lifecycle'
 import { getMerchant, merchantDashboard, registerMerchant } from './merchants'
@@ -83,6 +83,7 @@ app.post('/api/users', async (c) => {
   const b = z
     .object({
       role: z.enum(['borrower', 'guarantor', 'merchant']),
+      username: z.string().optional(),
       residenceCountry: z.string().length(3).transform((s) => s.toUpperCase()),
       residenceConfirmed: z.literal(true),
       registration: z.object({ challengeId: z.string(), credential: z.any() }).optional(),
@@ -128,17 +129,23 @@ app.post('/api/users', async (c) => {
     passkeyId = b.passkeyId
   }
 
-  if (keyType === 'secp256k1' && b.backup && !(await usernameAvailable(b.backup.username)))
-    throw new UserError('that username is taken', 409)
+  // one username for every account type (the password backup reuses it)
+  const username = b.username ?? b.backup?.username
+  const uname = username ? normUsername(username) : null
+  if (!uname && verified) throw new UserError('choose a username', 400)
+  if (uname && !(await usernameAvailable(uname))) {
+    const [mine] = await sql`SELECT 1 FROM users WHERE username=${uname} AND wallet=${(keyType === 'secp256k1' ? publicKey : walletFromPasskey(publicKey)).toLowerCase()}`
+    if (!mine) throw new UserError('that username is taken', 409)
+  }
   const ipCountry = c.req.header('cf-ipcountry') ?? c.req.header('x-vercel-ip-country') ?? null
   wallet = (keyType === 'secp256k1' ? publicKey : walletFromPasskey(publicKey)).toLowerCase() as Address
   const inserted = await sql`
-    INSERT INTO users (wallet, role, passkey_id, passkey_public_key, key_type, residence_country, residence_declared_at, signup_ip_country)
-    VALUES (${wallet}, ${b.role}, ${passkeyId}, ${publicKey.toLowerCase()}, ${keyType}, ${b.residenceCountry}, now(), ${ipCountry})
+    INSERT INTO users (wallet, role, passkey_id, passkey_public_key, key_type, residence_country, residence_declared_at, signup_ip_country, username)
+    VALUES (${wallet}, ${b.role}, ${passkeyId}, ${publicKey.toLowerCase()}, ${keyType}, ${b.residenceCountry}, now(), ${ipCountry}, ${uname})
     ON CONFLICT (wallet) DO NOTHING RETURNING wallet`
   const [u] = await sql`SELECT wallet, role FROM users WHERE wallet=${wallet}`
   if (u.role !== b.role) throw new UserError(`this passkey is already registered as a ${u.role}`, 409)
-  if (keyType === 'secp256k1' && b.backup && inserted.length > 0) await storeBackup({ ...b.backup, wallet })
+  if (keyType === 'secp256k1' && b.backup && inserted.length > 0) await storeBackup({ ...b.backup, username: uname ?? b.backup.username, wallet })
   await audit({ actor: b.role, action: 'user.registered', detail: { wallet, residence: b.residenceCountry, ipCountry, verified } })
   // a freshly registered, server-verified passkey signs the user in without a second prompt
   const token = verified && inserted.length > 0 ? mintSession(wallet) : undefined
@@ -147,9 +154,9 @@ app.post('/api/users', async (c) => {
 
 // Passkey public keys are not secret; the browser needs them to restore the account on sign-in.
 app.get('/api/passkeys/:id', async (c) => {
-  const [u] = await sql`SELECT wallet, role, passkey_public_key FROM users WHERE passkey_id=${c.req.param('id')}`
+  const [u] = await sql`SELECT wallet, role, username, passkey_public_key FROM users WHERE passkey_id=${c.req.param('id')}`
   if (!u) throw new UserError('unknown passkey', 404)
-  return c.json({ wallet: u.wallet, role: u.role, publicKey: u.passkey_public_key })
+  return c.json({ wallet: u.wallet, role: u.role, username: u.username, publicKey: u.passkey_public_key })
 })
 
 app.get('/api/username/:u', async (c) => c.json({ available: await usernameAvailable(c.req.param('u')) }))
@@ -207,7 +214,7 @@ app.post('/api/self/webhook', async (c) => {
 // ---------------- me ----------------
 app.get('/api/me', requireSession, async (c) => {
   const wallet = c.get('wallet')
-  const [u] = await sql`SELECT wallet, role, key_type, residence_country, created_at FROM users WHERE wallet=${wallet}`
+  const [u] = await sql`SELECT wallet, role, key_type, username, residence_country, created_at FROM users WHERE wallet=${wallet}`
   const [a] = await sql`SELECT flags, expires_at, tx_hash FROM attestations WHERE wallet=${wallet}`
   const [s] = await sql`SELECT status, updated_at FROM self_sessions WHERE wallet=${wallet} ORDER BY created_at DESC LIMIT 1`
   const [l] = await sql`SELECT id FROM lines WHERE borrower_wallet=${wallet} ORDER BY created_at DESC LIMIT 1`
@@ -225,6 +232,18 @@ app.get('/api/me', requireSession, async (c) => {
     line: l ? await lineView(l.id) : null,
     guaranteeing,
   })
+})
+
+// accounts created before usernames existed can pick one once
+app.post('/api/me/username', requireSession, async (c) => {
+  const { username } = z.object({ username: z.string() }).parse(await c.req.json())
+  const n = normUsername(username)
+  const [u] = await sql`SELECT username FROM users WHERE wallet=${c.get('wallet')}`
+  if (!u) throw new UserError('unknown account', 404)
+  if (u.username) throw new UserError('username already set', 409)
+  if (!(await usernameAvailable(n))) throw new UserError('that username is taken', 409)
+  await sql`UPDATE users SET username=${n} WHERE wallet=${c.get('wallet')}`
+  return c.json({ username: n })
 })
 
 app.get('/api/me/activity', requireSession, async (c) => {

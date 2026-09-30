@@ -60,9 +60,10 @@ export const hasLocalWallet = () => Boolean(storedCredential() || deviceVault())
  * Creates the passkey against a server challenge. The server verifies the registration (challenge,
  * origin, rpId) and signs the user in, so sign-up needs exactly ONE passkey prompt.
  */
-export async function createPasskey(label: string): Promise<{ cred: StoredCred; registration: { challengeId: string; credential: unknown } }> {
+export async function createPasskey(username: string): Promise<{ cred: StoredCred; registration: { challengeId: string; credential: unknown } }> {
   const { id: challengeId, challenge } = await api<{ id: string; challenge: Hex }>('/api/auth/register-challenge', { auth: false })
-  const credential = await Registration.create({ name: label, challenge, rp: { id: rpId(), name: 'KEYCARD' } } as any)
+  // user.name / displayName = the KEYCARD username: shown in iOS/Android passkey pickers as "<username> · KEYCARD"
+  const credential = await Registration.create({ name: username, challenge, rp: { id: rpId(), name: 'KEYCARD' } } as any)
   const serialized = Credential.serialize(credential as any)
   const c = { id: (credential as any).id as string, publicKey: serialized.publicKey as Hex }
   forgetDeviceKey()

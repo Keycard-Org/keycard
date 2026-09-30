@@ -14,7 +14,8 @@ export function normUsername(u: string) {
 }
 
 export async function usernameAvailable(u: string) {
-  const [r] = await sql`SELECT 1 FROM password_logins WHERE username=${normUsername(u)}`
+  const n = normUsername(u)
+  const [r] = await sql`SELECT 1 FROM users WHERE username=${n} UNION SELECT 1 FROM password_logins WHERE username=${n} LIMIT 1`
   return !r
 }
 

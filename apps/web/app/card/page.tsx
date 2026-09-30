@@ -10,6 +10,7 @@ import { AddMoney } from '@/components/AddMoney'
 import { StartOver } from '@/components/StartOver'
 import { PhysicalCard } from '@/components/PhysicalCard'
 import { LineStatus } from '@/components/LineStatus'
+import { UsernameBanner } from '@/components/UsernameBanner'
 import { MERCHANT_CODE_RE } from '@keycard/sdk'
 import type { Me } from '@/components/Onboard'
 
@@ -131,6 +132,7 @@ export default function CardPage() {
 
   return (
     <main className="wrap">
+      <UsernameBanner username={(me as any)?.user?.username} onSet={load} />
       <div className={`card ${frozen ? 'frozen' : ''}`}>
         <div className="label">Available to spend</div>
         <div className="big">{usd(line.spendable)}</div>

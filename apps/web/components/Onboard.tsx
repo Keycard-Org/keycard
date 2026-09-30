@@ -10,7 +10,7 @@ import { StartOver } from './StartOver'
 
 type Role = 'borrower' | 'guarantor' | 'merchant'
 export type Me = {
-  user: { wallet: Address; role: Role } | null
+  user: { wallet: Address; role: Role; username?: string | null } | null
   identity: { verified: boolean; attestationTx: string | null; selfStatus: string | null }
   line: any
   guaranteeing: any[]
@@ -78,26 +78,29 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
   }
 
   const createAccount = run(async () => {
+    const uname = username.trim().toLowerCase()
+    if (!/^[a-z0-9._-]{3,30}$/.test(uname)) throw new Error('Username: 3–30 characters, letters, numbers, . _ -')
+    const avail = await api<{ available: boolean }>(`/api/username/${encodeURIComponent(uname)}`, { auth: false })
+    if (!avail.available) throw new Error('That username is taken.')
     if (method === 'password') {
       if (pw !== pw2) throw new Error('Passwords do not match.')
-      const avail = await api<{ available: boolean }>(`/api/username/${encodeURIComponent(username.trim().toLowerCase())}`, { auth: false })
-      if (!avail.available) throw new Error('That username is taken.')
       const k = await createDeviceKey(pw)
       const keyRegistration = await registrationForDeviceKey(k)
       const authProof = await deriveAuthProof(username, pw)
       const r = await api<{ wallet: Address; token?: string }>('/api/users', {
         auth: false,
-        body: { role, keyRegistration, backup: { username, authProof, vault: k.vault }, residenceCountry: country, residenceConfirmed: true },
+        body: { role, username: uname, keyRegistration, backup: { username: uname, authProof, vault: k.vault }, residenceCountry: country, residenceConfirmed: true },
       })
       if (r.token) setToken(r.token)
       else await signIn({ kind: 'password', address: k.address, pk: k.pk }, r.wallet)
       await refresh()
       return
     }
-    const { cred, registration } = await createPasskey(role === 'borrower' ? 'KEYCARD' : `KEYCARD ${role}`)
+    // the username is the passkey's account name, shown in the phone's passkey picker
+    const { cred, registration } = await createPasskey(uname)
     const r = await api<{ wallet: Address; token?: string }>('/api/users', {
       auth: false,
-      body: { role, registration, residenceCountry: country, residenceConfirmed: true },
+      body: { role, username: uname, registration, residenceCountry: country, residenceConfirmed: true },
     })
     // a verified new registration returns a session directly: no second passkey prompt
     if (r.token) setToken(r.token)
@@ -163,6 +166,16 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
               </button>
             </div>
           )}
+          <label htmlFor="un">Username</label>
+          <input
+            id="un"
+            autoComplete="username"
+            autoCapitalize="none"
+            value={username}
+            onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
+            placeholder="e.g. maria.santos"
+          />
+          <p className="small muted">Shown on your KEYCARD and in your phone’s passkey list. Letters, numbers, . _ -</p>
           <div className="row" style={{ marginTop: 12 }}>
             <button className={method === 'passkey' ? '' : 'ghost'} style={{ flex: 1 }} onClick={() => setMethod('passkey')}>
               Face ID / fingerprint
@@ -181,8 +194,6 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
                 A wallet key is created on this device and locked with your password (the password never leaves the device).
                 Faster to sign, but it lives on this device only, and it is only as strong as your password.
               </p>
-              <label htmlFor="un">Username (to sign in on other devices)</label>
-              <input id="un" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. maria.santos" />
               <label htmlFor="pw">Password (at least 10 characters)</label>
               <input id="pw" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
               <label htmlFor="pw2">Repeat password</label>
@@ -210,7 +221,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
           <p />
           <button
             className="block"
-            disabled={busy || !country || excluded || !confirmResidence || (method === 'password' && (pw.length < 10 || pw !== pw2 || username.trim().length < 3))}
+            disabled={busy || !country || excluded || !confirmResidence || username.trim().length < 3 || (method === 'password' && (pw.length < 10 || pw !== pw2))}
             onClick={createAccount}
           >
             {busy ? (method === 'passkey' ? 'Waiting for passkey…' : 'Creating wallet…') : method === 'passkey' ? 'Create passkey account' : 'Create password account'}
