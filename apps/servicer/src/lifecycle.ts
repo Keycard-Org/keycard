@@ -41,7 +41,7 @@ export async function payNow(wallet: Address) {
   const seq = 20_000_000 + Math.floor(Date.now() / 1000) % 10_000_000
   const r = await repayFromBorrower(row, owed, seq)
   if (r.pulled === 0n) {
-    const why = r.reason === 'auto-debit is not active' ? 're-enable your auto-debit first, then pay' : r.reason === 'wallet is empty' ? 'add money to your KEYCARD wallet first' : r.reason
+    const why = r.reason === 'auto-debit is not active' ? 're-enable your auto-debit first, then pay' : r.reason === 'wallet is empty' ? 'add money to your KEYKARD wallet first' : r.reason
     throw new UserError(`could not collect: ${why}`)
   }
   await lineBookWrite('recordRepayment', [BigInt(row.linebook_id), r.txHash!, r.pulled, false])

@@ -4,7 +4,7 @@ import { short, toBase } from '@/lib/api'
 import { chargePhysicalCard, explainChainError } from '@/lib/wallet'
 import { nfcSupportedHint } from '@/lib/halo'
 
-/** Merchant: charge a customer's physical KEYCARD by tapping it on this phone. */
+/** Merchant: charge a customer's physical KEYKARD by tapping it on this phone. */
 export function TapToCharge({ merchantCode, onPaid }: { merchantCode: string; onPaid: () => void }) {
   const [amount, setAmount] = useState('')
   const [busy, setBusy] = useState(false)
@@ -28,7 +28,7 @@ export function TapToCharge({ merchantCode, onPaid }: { merchantCode: string; on
   return (
     <div className="panel">
       <h2>Tap to charge</h2>
-      <p className="small muted">Customer taps their physical KEYCARD on this phone. {nfcSupportedHint()}</p>
+      <p className="small muted">Customer taps their physical KEYKARD on this phone. {nfcSupportedHint()}</p>
       <label htmlFor="amt">Amount (USD)</label>
       <input id="amt" className="amount-input" inputMode="decimal" placeholder="$0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
       <button className="block" style={{ marginTop: 14 }} disabled={busy || !amount} onClick={charge}>{busy ? status ?? 'Waiting for card…' : 'Charge — tap card'}</button>

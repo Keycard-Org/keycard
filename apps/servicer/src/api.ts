@@ -96,7 +96,7 @@ app.post('/api/users', async (c) => {
     })
     .parse(await c.req.json())
   if (excludedCountries.has(b.residenceCountry))
-    throw new UserError('KEYCARD is not available to residents of this country.', 403)
+    throw new UserError('KEYKARD is not available to residents of this country.', 403)
 
   let publicKey: Hex
   let passkeyId: string
@@ -261,7 +261,7 @@ app.get('/api/me/activity', requireSession, async (c) => {
 // ---------------- borrower line ----------------
 app.post('/api/lines/prepare', requireSession, async (c) => c.json(await prepareLine(c.get('wallet'))))
 
-// One-signature mandate: the borrower signs only the key authorization; KEYCARD verifies and activates it.
+// One-signature mandate: the borrower signs only the key authorization; KEYKARD verifies and activates it.
 app.post('/api/lines/:id/mandate', requireSession, async (c) => {
   const { keyAuthorization } = z.object({ keyAuthorization: z.string().regex(/^0x[0-9a-fA-F]+$/) }).parse(await c.req.json())
   const wallet = c.get('wallet')

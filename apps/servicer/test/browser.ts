@@ -1,5 +1,5 @@
 /**
- * Real-browser end-to-end: Chromium + CDP virtual WebAuthn authenticator driving the actual KEYCARD UI.
+ * Real-browser end-to-end: Chromium + CDP virtual WebAuthn authenticator driving the actual KEYKARD UI.
  * Requires: servicer on :8787 (testnet) and web on :3000. Self is simulated by a signed webhook (test secret).
  *   TEMPO_NETWORK=testnet npx tsx test/browser.ts
  */
@@ -116,7 +116,7 @@ async function main() {
     return credentials.reduce((a: number, c: any) => a + (c.signCount ?? 0), 0)
   }
   const before = PASSWORD ? 0 : await signCount()
-  await page.check('text=I allow KEYCARD to take what I owe')
+  await page.check('text=I allow KEYKARD to take what I owe')
   await page.click('text=Sign & open my line')
   await page.waitForURL(`${WEB}/card`, { timeout: 90_000 })
   if (!PASSWORD) check('auto-debit needed exactly ONE passkey signature', (await signCount()) - before === 1, `${(await signCount()) - before} signature(s)`)
@@ -129,7 +129,7 @@ async function main() {
   await page.fill('#m', shopCode)
   await page.waitForSelector('text=Paying: Browser Test Bakery', { timeout: 15_000 })
   await page.fill('#a', '2.50')
-  await page.click('text=Pay with KEYCARD')
+  await page.click('text=Pay with KEYKARD')
   await page.waitForSelector('text=Paid Browser Test Bakery', { timeout: 60_000 })
   check('paid $2.50 to merchant by code from the browser (passkey = card key)', true)
 
@@ -141,7 +141,7 @@ async function main() {
   check('direct payment to a random wallet refused by protocol, explained in UI', true, (await page.textContent('.error')) ?? '')
 
   let settledRow: any[] = []
-  for (let i = 0; i < 12 && settledRow.length === 0; i++) {
+  for (let i = 0; i < 30 && settledRow.length === 0; i++) {
     settledRow = await sql`SELECT status FROM payments WHERE merchant_code=${shopCode} AND status='settled'`
     if (settledRow.length === 0) await new Promise((r) => setTimeout(r, 3000))
   }

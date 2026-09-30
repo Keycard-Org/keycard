@@ -11,11 +11,11 @@ import { api, API_URL, getConfig, setToken, type AppConfig } from './api'
 import { askPassword, deviceVault, forgetDeviceKey, unlockDeviceKey, unlockedDeviceKey } from './devicekey'
 
 /**
- * The KEYCARD wallet is a Tempo account controlled by ONE of:
+ * The KEYKARD wallet is a Tempo account controlled by ONE of:
  *   - a passkey (Face ID / fingerprint), or
  *   - a password-locked device key (see devicekey.ts).
- * The same signer is the ROOT of the user's own wallet and an ACCESS KEY on the KEYCARD credit account (the card).
- * Every transaction is fee-sponsored by the KEYCARD relay, so users never need a gas token.
+ * The same signer is the ROOT of the user's own wallet and an ACCESS KEY on the KEYKARD credit account (the card).
+ * Every transaction is fee-sponsored by the KEYKARD relay, so users never need a gas token.
  */
 const CRED_KEY = 'keycard.passkey'
 export type StoredCred = { id: string; publicKey: Hex }
@@ -52,7 +52,7 @@ export async function getSigner(): Promise<Signer> {
     }
     return { kind: 'password', address: k.address, pk: k.pk }
   }
-  throw new Error('No KEYCARD wallet on this device. Sign in again.')
+  throw new Error('No KEYKARD wallet on this device. Sign in again.')
 }
 export const hasLocalWallet = () => Boolean(storedCredential() || deviceVault())
 
@@ -62,8 +62,8 @@ export const hasLocalWallet = () => Boolean(storedCredential() || deviceVault())
  */
 export async function createPasskey(username: string): Promise<{ cred: StoredCred; registration: { challengeId: string; credential: unknown } }> {
   const { id: challengeId, challenge } = await api<{ id: string; challenge: Hex }>('/api/auth/register-challenge', { auth: false })
-  // user.name / displayName = the KEYCARD username: shown in iOS/Android passkey pickers as "<username> · KEYCARD"
-  const credential = await Registration.create({ name: username, challenge, rp: { id: rpId(), name: 'KEYCARD' } } as any)
+  // user.name / displayName = the KEYKARD username: shown in iOS/Android passkey pickers as "<username> · KEYKARD"
+  const credential = await Registration.create({ name: username, challenge, rp: { id: rpId(), name: 'KEYKARD' } } as any)
   const serialized = Credential.serialize(credential as any)
   const c = { id: (credential as any).id as string, publicKey: serialized.publicKey as Hex }
   forgetDeviceKey()
@@ -79,7 +79,7 @@ export async function registrationForDeviceKey(k: { address: Address; pk: Hex })
   return { challengeId, address: k.address, signature }
 }
 
-/** Sign in with an existing passkey on this device (public key fetched from KEYCARD). */
+/** Sign in with an existing passkey on this device (public key fetched from KEYKARD). */
 export async function restorePasskey(): Promise<StoredCred> {
   const cred = await WebAuthnP256.getCredential({
     rpId: rpId(),
@@ -98,7 +98,7 @@ export function signOut() {
   setToken(null)
 }
 
-/** Forget everything KEYCARD stored in this browser (session, passkey reference, password wallet). */
+/** Forget everything KEYKARD stored in this browser (session, passkey reference, password wallet). */
 export function startOver() {
   try {
     for (const k of Object.keys(localStorage)) if (k.startsWith('keycard.')) localStorage.removeItem(k)
@@ -136,7 +136,7 @@ async function relayClient(account: any, cfg?: AppConfig) {
   return createClient({
     account,
     chain,
-    // chain reads/sends go through the KEYCARD RPC proxy (CORS + retries for reads); fees via the relay
+    // chain reads/sends go through the KEYKARD RPC proxy (CORS + retries for reads); fees via the relay
     transport: withRelay(http(`${API_URL}/rpc`), http(`${API_URL}/relay`), { policy: 'sign-only' }),
   })
 }
@@ -152,7 +152,7 @@ function slowSignerNonce() {
   return { nonceKey: key, nonce: 0 }
 }
 
-/** Proves control of the wallet to the KEYCARD server; stores the session token. */
+/** Proves control of the wallet to the KEYKARD server; stores the session token. */
 export async function signIn(s: Signer, wallet: Address) {
   const { challenge } = await api<{ challenge: Hex }>('/api/auth/challenge', { body: { wallet }, auth: false })
   let body: any
@@ -176,7 +176,7 @@ export async function tokenBalance(owner: Address): Promise<bigint> {
 
 /**
  * One-signature permission: the wallet signs ONLY the key authorization (one passkey prompt / no QR loop).
- * KEYCARD verifies it matches the agreed terms and activates it on-chain.
+ * KEYKARD verifies it matches the agreed terms and activates it on-chain.
  */
 async function signKeyAuthorization(s: Signer, keyId: Address, policy: any): Promise<Hex> {
   const cfg = await getConfig()
@@ -199,7 +199,7 @@ export async function signGuarantee(s: Signer, inviteId: string, k: { keyId: Add
   return api<{ tx: Hex | null }>(`/api/guarantee/${inviteId}/key`, { body: { keyAuthorization } })
 }
 
-/** Revoke a key KEYCARD holds on the user's own wallet (mandate or guarantee). */
+/** Revoke a key KEYKARD holds on the user's own wallet (mandate or guarantee). */
 export async function revokeKey(s: Signer, keyId: Address) {
   const client = await relayClient(rootAccount(s))
   const r = (await Actions.accessKey.revokeSync(client, { accessKey: keyId, feePayer: true, ...slowSignerNonce() } as any)) as any
@@ -207,7 +207,7 @@ export async function revokeKey(s: Signer, keyId: Address) {
 }
 
 /**
- * Pay a KEYCARD merchant from the credit line. The card key can only pay the KEYCARD settlement
+ * Pay a KEYKARD merchant from the credit line. The card key can only pay the KEYKARD settlement
  * address (protocol-enforced); the memo names the merchant, who is settled by the network.
  */
 export async function payWithCard(s: Signer, creditAccount: Address, merchantCode: string, amount: bigint) {
@@ -229,7 +229,7 @@ export async function payRawAddress(s: Signer, creditAccount: Address, to: Addre
 /** Human-readable reason from a Tempo keychain / TIP-20 revert. */
 export function explainChainError(e: any): string {
   const s = String(e?.details ?? e?.shortMessage ?? e?.message ?? e)
-  if (/CallNotAllowed/.test(s)) return 'Refused by the Tempo protocol: your card can only pay through the KEYCARD network, not a raw wallet.'
+  if (/CallNotAllowed/.test(s)) return 'Refused by the Tempo protocol: your card can only pay through the KEYKARD network, not a raw wallet.'
   if (/SpendingLimitExceeded/.test(s)) return 'Refused by the Tempo protocol: this is over your available limit for this period (or your card is frozen).'
   if (/KeyAlreadyRevoked|KeyExpired/.test(s)) return 'This card key is no longer active.'
   if (/InsufficientBalance/.test(s)) return 'Not enough available credit.'
@@ -239,13 +239,13 @@ export function explainChainError(e: any): string {
 }
 
 /**
- * Merchant-side: charge a customer's PHYSICAL KEYCARD (NFC chip). Tap 1 identifies the card; the chip then
+ * Merchant-side: charge a customer's PHYSICAL KEYKARD (NFC chip). Tap 1 identifies the card; the chip then
  * signs the payment on tap 2. The card key can only pay the settlement address, within its own limit.
  */
 export async function chargePhysicalCard(p: { merchantCode: string; amount: bigint; onStatus?: (s: string) => void }) {
   const { readCard, cardAccessKeyAccount } = await import('./halo')
   const cfg = await getConfig()
-  p.onStatus?.('Customer: tap your KEYCARD')
+  p.onStatus?.('Customer: tap your KEYKARD')
   const card = await readCard(p.onStatus)
   const info = await api<{ creditAccount: Address; cardLimit: string }>(`/api/cards/${card.address}`, { auth: false })
   if (p.amount > BigInt(info.cardLimit)) throw new Error(`Over this card’s tap limit (${Number(info.cardLimit) / 1e6} USD).`)
@@ -266,7 +266,7 @@ export async function linkPhysicalCard(onStatus?: (s: string) => void) {
   return api<{ cardAddress: Address; cardLimit: string }>('/api/card/link', { body: { cardAddress: address, signature } })
 }
 
-/** Re-enable a revoked auto-debit: new mandate key, one signature, KEYCARD activates it. */
+/** Re-enable a revoked auto-debit: new mandate key, one signature, KEYKARD activates it. */
 export async function renewMandateFlow() {
   const s = await getSigner()
   const r = await api<{ lineId: number; mandate: { keyId: Address; cap: string; periodSeconds: number; recipient: Address; expiry: number } }>(

@@ -33,7 +33,7 @@ export async function storeBackup(p: { username: string; wallet: Address; authPr
   }
 }
 
-/** Returns the encrypted vault (never decryptable by KEYCARD) if the login proof matches. Rate-limited. */
+/** Returns the encrypted vault (never decryptable by KEYKARD) if the login proof matches. Rate-limited. */
 export async function fetchVault(p: { username: string; authProof: string }) {
   const username = normUsername(p.username)
   const [r] = await sql`SELECT * FROM password_logins WHERE username=${username}`

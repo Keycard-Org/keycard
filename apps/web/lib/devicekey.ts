@@ -59,7 +59,7 @@ export async function deriveAuthProof(username: string, password: string): Promi
   return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-/** Install a vault fetched from KEYCARD (encrypted) and unlock it locally with the password. */
+/** Install a vault fetched from KEYKARD (encrypted) and unlock it locally with the password. */
 export async function importVaultAndUnlock(vault: Vault, password: string) {
   localStorage.setItem(STORE, JSON.stringify(vault))
   return unlockDeviceKey(password)
@@ -90,7 +90,7 @@ export function lockDeviceKey() {
 }
 
 /** Minimal password prompt (native <dialog>, masked input). Resolves null if cancelled. */
-export function askPassword(message = 'Enter your KEYCARD password'): Promise<string | null> {
+export function askPassword(message = 'Enter your KEYKARD password'): Promise<string | null> {
   return new Promise((resolve) => {
     const d = document.createElement('dialog')
     d.style.cssText = 'border:1px solid #ccc;border-radius:14px;padding:18px;max-width:340px;width:90%'

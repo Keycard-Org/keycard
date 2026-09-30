@@ -9,7 +9,7 @@ import { open } from './vault'
 
 /**
  * One-signature key grants. The user's wallet signs ONLY a key authorization (one passkey prompt / one
- * password unlock). KEYCARD verifies it matches the agreed terms exactly, then activates it on-chain with a
+ * password unlock). KEYKARD verifies it matches the agreed terms exactly, then activates it on-chain with a
  * zero-value transfer signed BY THE NEW KEY carrying the authorization (Tempo allows a key to be used in the
  * same tx that authorizes it). Fee sponsored by the treasury. Verified on testnet 2026-09-29.
  */
@@ -53,7 +53,7 @@ export function checkKeyAuthorization(
   return ka
 }
 
-/** Submit the authorization on-chain using the new key itself (held by KEYCARD). Idempotent. */
+/** Submit the authorization on-chain using the new key itself (held by KEYKARD). Idempotent. */
 export async function activateKeyAuthorization(p: { owner: Address; keyId: Address; sealedKey: string; ka: any }) {
   if ((await getKey(p.owner, p.keyId)).exists) return null
   const key = Account.fromSecp256k1(open(p.sealedKey), { access: p.owner })

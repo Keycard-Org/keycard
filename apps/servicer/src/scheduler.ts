@@ -178,7 +178,7 @@ async function runGrace(row: any) {
 
   const [fresh] = await sql`SELECT * FROM lines WHERE id=${row.id}`
   if (due === 0n) {
-    // covered by family: the borrower's card stays frozen (they now owe their guarantor, not KEYCARD)
+    // covered by family: the borrower's card stays frozen (they now owe their guarantor, not KEYKARD)
     await sql`UPDATE lines SET grace_until=NULL WHERE id=${row.id}`
     if (fresh.status !== 'frozen') await freezeLine(fresh, 'MissedPayment')
     return

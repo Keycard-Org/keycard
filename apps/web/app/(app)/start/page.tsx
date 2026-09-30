@@ -61,11 +61,11 @@ export default function Start() {
 
   return (
     <main className="wrap">
-      <h1>Get your KEYCARD</h1>
+      <h1>Get your KEYKARD</h1>
       <p className="muted small">A minute, no documents stored, no fees.</p>
       {!me && <Onboard role="borrower" onReady={onReady} />}
       {me && <AccountBar me={me} />}
-      {me && me.user?.role !== 'borrower' && <WrongAccount me={me} want="cardholder" here="Getting a KEYCARD" />}
+      {me && me.user?.role !== 'borrower' && <WrongAccount me={me} want="cardholder" here="Getting a KEYKARD" />}
       {err && <p className="error">{err}</p>}
 
       {me && prep && (
@@ -79,14 +79,14 @@ export default function Start() {
             <div>Bills every<b>{duration(prep.mandate.periodSeconds)}</b></div>
           </div>
           <p className="small muted">
-            At the end of each period, what you spent is repaid automatically from your KEYCARD wallet (
+            At the end of each period, what you spent is repaid automatically from your KEYKARD wallet (
             <span className="mono">{short(me.user?.wallet)}</span>). Keep enough there to cover it.
           </p>
           <MandateTerms prep={prep} />
           <label className="check">
             <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
             <span className="small">
-              I allow KEYCARD to take what I owe from my wallet each period, up to the cap above, only to KEYCARD. I
+              I allow KEYKARD to take what I owe from my wallet each period, up to the cap above, only to KEYKARD. I
               understand I can revoke this at any time, and that revoking it freezes my card.
             </span>
           </label>
@@ -94,7 +94,7 @@ export default function Start() {
           <button className="block" disabled={!agree || busy} onClick={accept}>
             {busy ? stage ?? 'Working…' : 'Sign & open my line'}
           </button>
-          <p className="small muted center">You pay no network fees. KEYCARD sponsors them.</p>
+          <p className="small muted center">You pay no network fees. KEYKARD sponsors them.</p>
         </div>
         </>
       )}
@@ -111,7 +111,7 @@ function MandateTerms({ prep }: { prep: Prepared }) {
   const rows: [string, React.ReactNode][] = [
     ['Most it can take per period', `${usd(prep.mandate.cap)} ${sym}`],
     ['Period', duration(prep.mandate.periodSeconds)],
-    ['Can pay only', <>KEYCARD <span className="mono">{short(prep.mandate.recipient)}</span></>],
+    ['Can pay only', <>KEYKARD <span className="mono">{short(prep.mandate.recipient)}</span></>],
     ['Ends', new Date(prep.mandate.expiry * 1000).toISOString().slice(0, 10)],
   ]
   return (
@@ -125,7 +125,7 @@ function MandateTerms({ prep }: { prep: Prepared }) {
           </li>
         ))}
       </ul>
-      <p className="small" style={{ margin: '10px 0 0' }}>KEYCARD only takes what you actually owe. The cap is the most it could ever take in one period.</p>
+      <p className="small" style={{ margin: '10px 0 0' }}>KEYKARD only takes what you actually owe. The cap is the most it could ever take in one period.</p>
     </div>
   )
 }

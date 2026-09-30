@@ -152,7 +152,7 @@ async function main() {
   const spendKey = Account.fromHeadlessWebAuthn(b.pk, { access: line.creditAccount, rpId: 'localhost', origin: 'http://localhost:3000' } as any)
   const spendClient = createClient({ account: spendKey, chain, transport: relayTransport })
   const s1 = (await Actions.token.transferSync(spendClient, { token: net.token, to: settle, amount: u('7'), memo: encodePayMemo(shop.code), feePayer: true } as any)) as any
-  check('card pays merchant $7 through the KEYCARD network', s1.receipt.status === 'success', s1.receipt.transactionHash)
+  check('card pays merchant $7 through the KEYKARD network', s1.receipt.status === 'success', s1.receipt.transactionHash)
   const settled = await waitFor('merchant settlement', async () => {
     const [p] = await sql`SELECT * FROM payments WHERE pay_tx=${s1.receipt.transactionHash} AND status='settled' AND settle_tx IS NOT NULL`
     return p
@@ -202,14 +202,14 @@ async function main() {
   check('affordability cap computed', BigInt(gprep.cap) === u('30'), `cap=${gprep.cap} max=${gprep.maxAllowed}`)
   const gpol = guaranteeKeyPolicy({ token: net.token, cap: BigInt(gprep.key.cap), recoveryTo: gprep.key.recipient, expiry: gprep.key.expiry })
   const gClient = createClient({ account: g.root, chain, transport: relayTransport })
-  // one-signature flow (same as the app): guarantor signs ONLY the key authorization; KEYCARD verifies + activates
+  // one-signature flow (same as the app): guarantor signs ONLY the key authorization; KEYKARD verifies + activates
   const gka = await Actions.accessKey.signAuthorization(gClient, { accessKey: { address: gprep.key.keyId, type: 'secp256k1' }, ...gpol } as any)
   const bad = { ...(gka as any), limits: [{ ...(gka as any).limits[0], limit: BigInt(gprep.key.cap) * 10n }] }
   let tampered = false
   try { await api(`/api/guarantee/${inv.inviteId}/key`, { token: gtoken, body: { keyAuthorization: KeyAuthorization.serialize(bad) } }) } catch { tampered = true }
-  check('tampered guarantee (10x cap) rejected by KEYCARD before touching the chain', tampered)
+  check('tampered guarantee (10x cap) rejected by KEYKARD before touching the chain', tampered)
   const gact = await api(`/api/guarantee/${inv.inviteId}/key`, { token: gtoken, body: { keyAuthorization: KeyAuthorization.serialize(gka as any) } })
-  check('guarantor signed capped guarantee key (one signature, activated by KEYCARD)', Boolean(gact.ok), gact.tx)
+  check('guarantor signed capped guarantee key (one signature, activated by KEYKARD)', Boolean(gact.ok), gact.tx)
   const gl = await api(`/api/guarantee/${inv.inviteId}/confirm`, { token: gtoken, body: { consentHash: gprep.consentHash } })
   check('guarantee attached, limit raised to $100', gl.guaranteed === u('30').toString() && gl.limit === u('100').toString(), `limit=${gl.limit}`)
 

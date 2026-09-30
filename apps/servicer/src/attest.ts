@@ -19,7 +19,7 @@ export async function attestWallet(p: {
   const [clash] = await sql`SELECT wallet FROM attestations WHERE nullifier_hash=${nullifierHash} AND wallet<>${wallet}`
   if (clash) {
     await audit({ actor: 'servicer', action: 'self.identity_already_linked', detail: { wallet, linkedTo: clash.wallet.slice(0, 10) } })
-    throw new Error('this identity is already linked to another KEYCARD account')
+    throw new Error('this identity is already linked to another KEYKARD account')
   }
   const receipt = await registryWrite('attest', [wallet, nullifierHash, p.flags, BigInt(Math.floor(p.expiresAt.getTime() / 1000))])
   await sql`

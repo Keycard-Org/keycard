@@ -9,7 +9,7 @@ import { UserError, activeMerchants, resilient } from './lines'
 import { open } from './vault'
 
 /**
- * Physical KEYCARD (Burner card / Arx HaLo chip, key slot 1).
+ * Physical KEYKARD (Burner card / Arx HaLo chip, key slot 1).
  * The chip key becomes a second access key on the credit account with a lower "contactless" limit,
  * the same settlement-only scope and the line's expiry. Slot 1 has no PIN, so like any contactless card
  * whoever holds it can spend up to CARD_LIMIT per period; freezing revokes it on-chain instantly.
@@ -34,9 +34,9 @@ export async function linkCard(p: { wallet: Address; cardAddress: Address; signa
 
   const [row] = await sql`SELECT * FROM lines WHERE borrower_wallet=${wallet} AND status='active'`
   if (!row) throw new UserError('your credit line must be active to link a card')
-  if (row.card_key_id) throw new UserError('a physical card is already linked to this KEYCARD; unlink it first')
+  if (row.card_key_id) throw new UserError('a physical card is already linked to this KEYKARD; unlink it first')
   const [taken] = await sql`SELECT id FROM lines WHERE card_key_id=${recovered} AND id<>${row.id}`
-  if (taken) throw new UserError('this card is linked to another KEYCARD')
+  if (taken) throw new UserError('this card is linked to another KEYKARD')
 
   const cardLimit = env.CARD_LIMIT < BigInt(row.credit_limit) ? env.CARD_LIMIT : BigInt(row.credit_limit)
   const creditRoot = Account.fromSecp256k1(open(row.credit_root_enc))
@@ -50,7 +50,7 @@ export async function linkCard(p: { wallet: Address; cardAddress: Address; signa
   const existing = await getKey(row.credit_account, recovered)
   const [unlinked] = await sql`SELECT 1 FROM audit_log WHERE line_id=${row.id} AND action='card.unlinked' AND detail->>'card'=${recovered} LIMIT 1`
   if (existing.revoked || unlinked)
-    throw new UserError('this card was unlinked from this KEYCARD. Tempo never re-authorises a revoked key on the same account, so it can only be linked to a different KEYCARD. (Use Freeze instead of Unlink to pause a card.)', 409)
+    throw new UserError('this card was unlinked from this KEYKARD. Tempo never re-authorises a revoked key on the same account, so it can only be linked to a different KEYKARD. (Use Freeze instead of Unlink to pause a card.)', 409)
   try {
     await resilient(
       'authorize-card-key',
@@ -65,7 +65,7 @@ export async function linkCard(p: { wallet: Address; cardAddress: Address; signa
   } catch (e: any) {
     const m = String(e?.details ?? e?.shortMessage ?? e?.message ?? e)
     if (/KeyAlreadyRevoked/i.test(m))
-      throw new UserError('this card was unlinked from this KEYCARD and cannot be re-linked to it (Tempo protocol rule). Link it to a different KEYCARD.', 409)
+      throw new UserError('this card was unlinked from this KEYKARD and cannot be re-linked to it (Tempo protocol rule). Link it to a different KEYKARD.', 409)
     throw new UserError(`could not link card: ${m.slice(0, 160)}`, 502)
   }
   await sql`UPDATE lines SET card_key_id=${recovered}, card_limit=${cardLimit.toString()}, card_status='active',
@@ -97,11 +97,11 @@ export async function unlinkCard(wallet: Address) {
 export async function cardInfo(cardAddress: Address) {
   const [row] = await sql`SELECT credit_account, card_limit, card_status, status FROM lines WHERE card_key_id=${lower(cardAddress)}
                           ORDER BY created_at DESC LIMIT 1`
-  if (!row) throw new UserError('this card is not linked to any KEYCARD', 404)
+  if (!row) throw new UserError('this card is not linked to any KEYKARD', 404)
   if (row.card_status !== 'active') throw new UserError('this physical card has been frozen by its owner', 403)
-  if (row.status === 'grace') throw new UserError('declined: this KEYCARD has an overdue payment. The owner needs to add money to their wallet.', 403)
-  if (row.status === 'frozen') throw new UserError('declined: this KEYCARD is frozen', 403)
-  if (row.status !== 'active') throw new UserError(`declined: this KEYCARD is ${row.status}`, 403)
+  if (row.status === 'grace') throw new UserError('declined: this KEYKARD has an overdue payment. The owner needs to add money to their wallet.', 403)
+  if (row.status === 'frozen') throw new UserError('declined: this KEYKARD is frozen', 403)
+  if (row.status !== 'active') throw new UserError(`declined: this KEYKARD is ${row.status}`, 403)
   return { creditAccount: row.credit_account as Address, cardLimit: row.card_limit.toString() }
 }
 

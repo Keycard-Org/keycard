@@ -1,15 +1,15 @@
-# KEYCARD
+# KEYKARD
 
 **Credit your family can back.** An uncollateralised stablecoin credit line on [Tempo](https://tempo.xyz). Every rule is enforced by the protocol itself.
 
-- **Your card is a key.** Your passkey (Face ID or fingerprint), a password-locked device key, or a physical NFC chip card is authorised as an *access key* on a KEYCARD-funded credit account. Tempo's AccountKeychain enforces three things on it:
+- **Your card is a key.** Your passkey (Face ID or fingerprint), a password-locked device key, or a physical NFC chip card is authorised as an *access key* on a KEYKARD-funded credit account. Tempo's AccountKeychain enforces three things on it:
   - a per-period spend limit;
-  - an allow-list containing only the KEYCARD network address;
+  - an allow-list containing only the KEYKARD network address;
   - an expiry.
   Paying anyone else is refused on-chain (`CallNotAllowed`).
-- **Repayment is an auto-debit you control.** You grant KEYCARD one key on your own wallet. It can take at most the agreed amount per period, and only to KEYCARD. You sign it once. Revoke it and your card freezes within seconds.
+- **Repayment is an auto-debit you control.** You grant KEYKARD one key on your own wallet. It can take at most the agreed amount per period, and only to KEYKARD. You sign it once. Revoke it and your card freezes within seconds.
 - **Family can back you.** A relative signs one capped key on *their* wallet. It is pulled only if you miss a payment after the grace period, and never more than they agreed. Affordability is checked: at most 20% of disposable income.
-- **Real, unique people.** Identity comes from [Self](https://self.xyz): a zero-knowledge passport proof. KEYCARD never sees the passport.
+- **Real, unique people.** Identity comes from [Self](https://self.xyz): a zero-knowledge passport proof. KEYKARD never sees the passport.
 - **A merchant network.** Anyone verified can become a merchant, get a code, a QR and a pay link, and accept tap-to-pay. The network settles merchants in USDC today. With a card-network partner, the same authorisation settles merchants in **fiat at any POS**; only the settlement leg changes.
 
 ## Repository
@@ -67,7 +67,7 @@ USE_DEV_VERIFY=1 TEMPO_NETWORK=testnet npx tsx test/browser.ts   # real Chromium
 The e2e tests run against a live servicer on Tempo testnet: real transactions, fees sponsored.
 
 ## Safety notes
-- **Fees are always sponsored.** Fees paid by a limited key's own account count against its limit, so KEYCARD sponsors every fee and pulls stay exact.
+- **Fees are always sponsored.** Fees paid by a limited key's own account count against its limit, so KEYKARD sponsors every fee and pulls stay exact.
 - **Every money movement has a unique memo** and is reconciled on-chain before any retry. Writes are never transport-retried.
 - **Server-held keys are AES-256-GCM encrypted at rest:** credit-account roots, mandate keys and guarantee keys.
 - **Password wallets are encrypted client-side** (PBKDF2 600k + AES-GCM). The server stores only the ciphertext and a scrypt hash of a separately derived login proof.

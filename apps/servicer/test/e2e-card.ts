@@ -172,7 +172,7 @@ async function main() {
   const ch3 = await api('/api/card/challenge', { token, method: 'POST' })
   let relink = ''
   try { await api('/api/card/link', { token, body: { cardAddress: chipAddr, signature: chipSign(ch3.digest) } }) } catch (e: any) { relink = e.message }
-  check('re-linking an unlinked card gives a clear 409 (not internal error)', /409/.test(relink) && /re-?link|re-authorises|different KEYCARD/i.test(relink), relink.slice(0, 90))
+  check('re-linking an unlinked card gives a clear 409 (not internal error)', /409/.test(relink) && /re-?link|re-authorises|different KEYKARD/i.test(relink), relink.slice(0, 90))
 
   console.log(`\n${results.filter((r) => r.startsWith('PASS')).length}/${results.length} checks passed`)
   await sql.end()

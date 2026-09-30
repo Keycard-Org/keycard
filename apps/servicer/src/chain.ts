@@ -14,7 +14,7 @@ const writeTransport = http(net.rpcUrl, { retryCount: 0 })
 export const treasury = Account.fromSecp256k1(keys.treasury)
 export const attester = Account.fromSecp256k1(keys.attester)
 export const servicer = Account.fromSecp256k1(keys.servicer)
-/** KEYCARD network settlement address: every card payment goes here, memo names the merchant. */
+/** KEYKARD network settlement address: every card payment goes here, memo names the merchant. */
 export const settlement = Account.fromSecp256k1(keys.settlement)
 
 export const publicClient = createClient({ chain, transport })
@@ -83,7 +83,7 @@ export async function allowedCalls(account: Address, keyId: Address) {
 }
 
 /**
- * Verifies a key on-chain matches exactly the policy KEYCARD expects: live, only token transfers,
+ * Verifies a key on-chain matches exactly the policy KEYKARD expects: live, only token transfers,
  * only to `recipients`, limit >= `minLimit` remaining capacity semantics checked by caller.
  */
 export async function verifyKeyPolicy(p: {
@@ -107,7 +107,7 @@ export async function verifyKeyPolicy(p: {
   return { ok: true }
 }
 
-// ---------------- KEYCARD contracts ----------------
+// ---------------- KEYKARD contracts ----------------
 
 export async function lineBookWrite(functionName: string, args: readonly unknown[]) {
   const hash = await writeContract(clientFor(servicer), {
@@ -145,7 +145,7 @@ const transferWithMemoEvent = parseAbiItem(
 
 /**
  * Reconciliation: has a transfer with this exact memo from `from` to `to` already landed?
- * Every KEYCARD money movement carries a unique memo, so this is the source of truth before any retry.
+ * Every KEYKARD money movement carries a unique memo, so this is the source of truth before any retry.
  */
 export async function findMemoTransfer(p: { from: Address; to: Address; memo: Hex; lookbackBlocks?: bigint }) {
   const head = await getBlockNumber(publicClient)

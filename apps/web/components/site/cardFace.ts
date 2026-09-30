@@ -1,5 +1,5 @@
 /**
- * The KEYCARD faces, drawn on 2D canvases and used as textures on the 3D card.
+ * The KEYKARD faces, drawn on 2D canvases and used as textures on the 3D card.
  * Everything is drawn in code: no image files to load, crisp at any size, and the amount can change live.
  */
 
@@ -79,7 +79,7 @@ function wordmark(ctx: CanvasRenderingContext2D, x: number, y: number, color: st
   ctx.fillStyle = color
   ctx.font = `700 40px ${fontFamily()}`
   ctx.letterSpacing = '6px'
-  ctx.fillText('KEYCARD', x + 74, y)
+  ctx.fillText('KEYKARD', x + 74, y)
   ctx.restore()
 }
 
@@ -194,7 +194,7 @@ export function drawBack(ctx: CanvasRenderingContext2D) {
 
   ctx.fillStyle = 'rgba(245,245,247,0.45)'
   ctx.font = `400 20px ${fontFamily()}`
-  ctx.fillText('This card can only pay KEYCARD merchants. Enforced by the Tempo protocol.', 64, 590)
+  ctx.fillText('This card can only pay KEYKARD merchants. Enforced by the Tempo protocol.', 64, 590)
 }
 
 export function drawFamily(ctx: CanvasRenderingContext2D) {

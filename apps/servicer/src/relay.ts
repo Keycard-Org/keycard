@@ -10,8 +10,8 @@ import { sql } from './db'
  * Fee-sponsorship relay (Tempo's official tempo.ts Handler.feePayer), speaking the protocol viem's
  * `withRelay` transport expects (eth_signRawTransaction / eth_sendRawTransaction[Sync]).
  *
- * Policy (we only pay fees for KEYCARD activity):
- *   - sender must be a KEYCARD user wallet, credit account or guarantor wallet
+ * Policy (we only pay fees for KEYKARD activity):
+ *   - sender must be a KEYKARD user wallet, credit account or guarantor wallet
  *   - every call must target the line token or the AccountKeychain precompile
  *     (an empty call list is allowed only when the tx carries a keyAuthorization)
  *   - per-sender daily cap
@@ -33,7 +33,7 @@ export async function checkRelayPolicy(serialized: `0x${string}`) {
   const tx = Transaction.deserialize(serialized as any) as any
   const from = tx.from ? lower(tx.from) : null
   if (!from) throw new RelayPolicyError('unsigned transaction')
-  if (!(await isKnownSender(from))) throw new RelayPolicyError('sender is not a KEYCARD account')
+  if (!(await isKnownSender(from))) throw new RelayPolicyError('sender is not a KEYKARD account')
   const calls: { to?: string; data?: string; value?: bigint }[] = tx.calls ?? (tx.to ? [{ to: tx.to, data: tx.data }] : [])
   if (calls.length === 0 && !tx.keyAuthorization) throw new RelayPolicyError('empty transaction')
   for (const c of calls) {

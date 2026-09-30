@@ -7,9 +7,9 @@ const sans = Geist({ subsets: ['latin'], variable: '--font-sans', display: 'swap
 const mono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'KEYCARD — credit without the bank',
+  title: 'KEYKARD — credit without the bank',
   description:
-    'A stablecoin credit card on Tempo. No bank, no collateral, no fees. Your card can only pay KEYCARD merchants, repayment is an auto-pay capped by the blockchain, and family can back you.',
+    'A stablecoin credit card on Tempo. No bank, no collateral, no fees. Your card can only pay KEYKARD merchants, repayment is an auto-pay capped by the blockchain, and family can back you.',
 }
 export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#0A0A0B' }
 

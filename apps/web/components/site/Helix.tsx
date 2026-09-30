@@ -5,7 +5,7 @@
  *
  * Geometry, spiral layout and the depth-fade shader are ported from
  * github.com/YildizDikme/3D-threejs-spiral-gallery (used with the author's permission).
- * Changes for KEYCARD: one InstancedMesh + a texture atlas instead of 75 meshes/materials, tiles drawn in code,
+ * Changes for KEYKARD: one InstancedMesh + a texture atlas instead of 75 meshes/materials, tiles drawn in code,
  * visibility/opacity driven by the scroll story, and the loop does no work while the helix is hidden.
  */
 
@@ -95,7 +95,7 @@ function drawAtlas() {
     ctx.fillStyle = 'rgba(179,169,255,0.9)'
     ctx.font = `700 22px ${sans}`
     ctx.letterSpacing = '5px'
-    ctx.fillText('KEYCARD MERCHANT', x + 44, y + 76)
+    ctx.fillText('KEYKARD MERCHANT', x + 44, y + 76)
     ctx.letterSpacing = '0px'
     ctx.fillStyle = '#f5f5f7'
     ctx.font = `500 64px ${sans}`

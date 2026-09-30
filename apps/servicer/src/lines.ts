@@ -62,7 +62,7 @@ export function webAuthnKeyId(publicKey: Hex, parent: Address): Address {
 }
 
 /**
- * The card's allow-list is exactly ONE address: the KEYCARD settlement address. Merchants are
+ * The card's allow-list is exactly ONE address: the KEYKARD settlement address. Merchants are
  * identified by the memo (KCP:<code>:<nonce>) and settled by the servicer, like a card network.
  * Any other destination is refused by the Tempo protocol.
  */

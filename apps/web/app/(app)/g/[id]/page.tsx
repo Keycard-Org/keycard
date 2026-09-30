@@ -69,7 +69,7 @@ export default function GuarantorPage({ params }: { params: Promise<{ id: string
       {inv && (
         <p className="muted">
           <span className="mono">{short(inv.borrowerWallet)}</span> is asking you to guarantee up to <b>{usd(inv.requested)}</b>{' '}
-          of their KEYCARD credit line, until {new Date(inv.termEnd).toLocaleDateString()}.
+          of their KEYKARD credit line, until {new Date(inv.termEnd).toLocaleDateString()}.
         </p>
       )}
       {err && <p className="error">{err}</p>}

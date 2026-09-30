@@ -19,7 +19,7 @@ export type Network = {
    * In production all fees are sponsored anyway.
    */
   feeToken: Address
-  /** Deployed KEYCARD contracts (filled after deploy). */
+  /** Deployed KEYKARD contracts (filled after deploy). */
   registry?: Address
   lineBook?: Address
   deployBlock?: bigint

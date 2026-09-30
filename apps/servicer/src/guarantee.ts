@@ -41,9 +41,9 @@ export async function getInvite(id: string) {
 export function consentText(p: { cap: bigint; borrower: string; termEnd: Date }) {
   const usd = (Number(p.cap) / 1e6).toFixed(2)
   return [
-    `I guarantee the KEYCARD credit line of ${p.borrower}.`,
-    `If they miss a repayment and do not pay within the grace period, KEYCARD may take up to $${usd} from my wallet, in total, only to KEYCARD.`,
-    `This permission is enforced by the Tempo blockchain: KEYCARD cannot take more than $${usd}, or send it anywhere else.`,
+    `I guarantee the KEYKARD credit line of ${p.borrower}.`,
+    `If they miss a repayment and do not pay within the grace period, KEYKARD may take up to $${usd} from my wallet, in total, only to KEYKARD.`,
+    `This permission is enforced by the Tempo blockchain: KEYKARD cannot take more than $${usd}, or send it anywhere else.`,
     `It ends on ${p.termEnd.toISOString().slice(0, 10)}. I can withdraw it at any time for future borrowing by revoking the key; the borrower's credit limit will then be reduced.`,
   ].join('\n')
 }

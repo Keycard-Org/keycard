@@ -160,7 +160,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
       {step === 0 && (
         <div className="panel">
           <span className="eyebrow">Step 1 · Account</span>
-          <h2>{role === 'borrower' ? 'Create your KEYCARD' : role === 'merchant' ? 'Accept KEYCARD payments' : 'Create your guarantor account'}</h2>
+          <h2>{role === 'borrower' ? 'Create your KEYKARD' : role === 'merchant' ? 'Accept KEYKARD payments' : 'Create your guarantor account'}</h2>
           {deviceVault() && (
             <div className="notice small">
               This device has a password wallet.{' '}
@@ -179,7 +179,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
             onChange={(e) => setUsername(e.target.value.replace(/\s/g, ''))}
             placeholder="e.g. maria.santos"
           />
-          <p className="small muted">Shown on your KEYCARD and in your phone’s passkey list. Letters, numbers, . _ -</p>
+          <p className="small muted">Shown on your KEYKARD and in your phone’s passkey list. Letters, numbers, . _ -</p>
           <div className="seg" role="tablist" aria-label="Sign-in method">
             <button role="tab" aria-selected={method === 'passkey'} className={method === 'passkey' ? 'on' : ''} onClick={() => setMethod('passkey')}>
               Face ID
@@ -190,7 +190,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
           </div>
           {method === 'passkey' ? (
             <p className="muted small">
-              Recommended. Your account is a passkey: Face ID or fingerprint, no seed phrase. KEYCARD pays every network fee.
+              Recommended. Your account is a passkey: Face ID or fingerprint, no seed phrase. KEYKARD pays every network fee.
             </p>
           ) : (
             <>
@@ -215,12 +215,12 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
           </select>
           {excluded && (
             <p className="error small">
-              KEYCARD is not available to residents of this country yet.
+              KEYKARD is not available to residents of this country yet.
             </p>
           )}
           <label className="check">
             <input type="checkbox" checked={confirmResidence} onChange={(e) => setConfirmResidence(e.target.checked)} />
-            <span className="small">I confirm this is my country of residence, and I will tell KEYCARD if it changes.</span>
+            <span className="small">I confirm this is my country of residence, and I will tell KEYKARD if it changes.</span>
           </label>
           <p />
           <button
@@ -251,7 +251,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
               <button className="block" disabled={busy || !username || !pw} onClick={passwordSignIn}>
                 {busy ? 'Signing in…' : 'Sign in'}
               </button>
-              <p className="small muted">Works on any device. Your wallet is stored encrypted; KEYCARD cannot open it.</p>
+              <p className="small muted">Works on any device. Your wallet is stored encrypted; KEYKARD cannot open it.</p>
             </div>
           )}
         </div>
@@ -262,8 +262,8 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
           <span className="eyebrow">Step 2 · Verify</span>
           <h2>Verify you’re a real, unique person</h2>
           <p className="small">
-            KEYCARD uses <b>Self</b>: tap your passport’s chip on your phone. Self proves three facts with a
-            zero-knowledge proof: you’re over 18, you’re a unique person, and you’re not on a sanctions list. <b>We never see your passport, name or number.</b> One passport = one KEYCARD.
+            KEYKARD uses <b>Self</b>: tap your passport’s chip on your phone. Self proves three facts with a
+            zero-knowledge proof: you’re over 18, you’re a unique person, and you’re not on a sanctions list. <b>We never see your passport, name or number.</b> One passport = one KEYKARD.
           </p>
           {role === 'guarantor' && <p className="small muted">As a guarantor, your nationality is also shared so we can check the family corridor.</p>}
           {cfg && !cfg.selfEnabled && <p className="notice small">Identity verification (Self) is not configured on this server yet.</p>}

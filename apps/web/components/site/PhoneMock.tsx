@@ -3,7 +3,7 @@ import { CssCard } from './CssCard'
 /** The app's home screen, in a phone frame. Built in HTML (no screenshots), matching the app's layout. */
 export function PhoneMock() {
   return (
-    <div className="kc-phone" aria-label="The KEYCARD app home screen">
+    <div className="kc-phone" aria-label="The KEYKARD app home screen">
       <div className="kc-phone__screen">
         <div className="kc-phone__status"><span>9:41</span><span className="kc-phone__island" /><span>5G</span></div>
         <div className="kc-phone__hello">

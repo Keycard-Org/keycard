@@ -2,7 +2,7 @@ import type { Address } from 'viem'
 import { Scopes } from 'viem/tempo'
 
 /**
- * Access-key policies. Every KEYCARD key allows ONLY direct TIP-20 transfer / transferWithMemo to an
+ * Access-key policies. Every KEYKARD key allows ONLY direct TIP-20 transfer / transferWithMemo to an
  * explicit recipient list. Keychain limits apply to transfer, transferWithMemo and approve only, and
  * NOT to transferFrom (AccountKeychain docs), so we never scope any other selector.
  * Verified on testnet 2026-09-28 (spike/RESULTS.md): off-list recipients and approve() are rejected
@@ -35,7 +35,7 @@ export function spendKeyPolicy(p: {
   }
 }
 
-/** Repayment mandate on the borrower's income wallet: at most one instalment per period, only to KEYCARD. */
+/** Repayment mandate on the borrower's income wallet: at most one instalment per period, only to KEYKARD. */
 export function mandateKeyPolicy(p: {
   token: Address
   instalment: bigint
@@ -50,7 +50,7 @@ export function mandateKeyPolicy(p: {
   }
 }
 
-/** Guarantee on the guarantor's wallet: one-time cap (period 0), only to KEYCARD recovery. */
+/** Guarantee on the guarantor's wallet: one-time cap (period 0), only to KEYKARD recovery. */
 export function guaranteeKeyPolicy(p: { token: Address; cap: bigint; recoveryTo: Address; expiry: number }): KeyPolicy {
   return {
     expiry: p.expiry,

@@ -5,7 +5,7 @@ import { api, usd, type AppConfig } from '@/lib/api'
 import { CopyText, Qr } from './Qr'
 
 /**
- * Deposit into the user's own KEYCARD wallet (the account repayments are auto-debited from).
+ * Deposit into the user's own KEYKARD wallet (the account repayments are auto-debited from).
  * Tempo supports USDC.e / USDT0 deposits from Coins.ph and exchanges (Coins.ph added Tempo on 2026-08-09).
  */
 export function AddMoney({ wallet, balance, cfg, onFunded }: { wallet: Address; balance: bigint | null; cfg: AppConfig; onFunded?: () => void }) {

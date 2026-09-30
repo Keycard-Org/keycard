@@ -1,7 +1,7 @@
 import { hexToString, stringToHex, type Hex } from 'viem'
 
 /**
- * TIP-20 memos are 32 bytes. KEYCARD memos are short ASCII so they are readable on the explorer
+ * TIP-20 memos are 32 bytes. KEYKARD memos are short ASCII so they are readable on the explorer
  * and deterministic, which makes every pull idempotent: before retrying, the servicer checks
  * whether a transfer with this memo already landed.
  *
@@ -28,9 +28,9 @@ export function decodeMemo(memo: Hex): { kind: MemoKind; lineId: bigint; seq: bi
 }
 
 /**
- * Card payment memo. The card pays the KEYCARD settlement address; the memo names the merchant.
+ * Card payment memo. The card pays the KEYKARD settlement address; the memo names the merchant.
  *   KCP:<MERCHANTCODE>:<nonce>     e.g. "KCP:7QX2MD:1727600000123"
- * This is the authorization message of the KEYCARD network. Settlement to the merchant happens
+ * This is the authorization message of the KEYKARD network. Settlement to the merchant happens
  * off the card key: in USDC today, in fiat through a card-network partner later.
  */
 export const MERCHANT_CODE_RE = /^[A-Z2-9]{6}$/

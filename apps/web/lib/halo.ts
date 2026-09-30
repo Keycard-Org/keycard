@@ -5,7 +5,7 @@ import { Signature, PublicKey } from 'ox'
 import { Account } from 'viem/tempo'
 
 /**
- * Physical KEYCARD: Burner card / Arx HaLo NFC chip, KEY SLOT 1 (factory secp256k1, no PIN, raw digests allowed).
+ * Physical KEYKARD: Burner card / Arx HaLo NFC chip, KEY SLOT 1 (factory secp256k1, no PIN, raw digests allowed).
  * We never use slots 8/9 (the Burner wallet key, PIN-locked, 20 wrong PINs brick the card).
  * libhalo picks the transport itself: Web NFC on Android Chrome, the WebAuthn "credential" method on iPhone Safari.
  * Requires HTTPS.

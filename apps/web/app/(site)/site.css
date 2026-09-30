@@ -1,4 +1,4 @@
-/* KEYCARD website. Tokens live in app/tokens.css. */
+/* KEYKARD website. Tokens live in app/tokens.css. */
 
 body:has(.kc-site) { background: var(--kc-bg); color: var(--kc-text); }
 .kc-site { position: relative; min-height: 100vh; background: var(--kc-bg); color: var(--kc-text); overflow-x: clip; }

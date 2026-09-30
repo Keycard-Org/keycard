@@ -2,7 +2,7 @@ import { net } from './config'
 
 /**
  * JSON-RPC proxy for the web/mobile app. The public Tempo RPC can fail without CORS headers, which browsers
- * surface as a hard error; routing through KEYCARD adds CORS, retries for READS, and an allow-list.
+ * surface as a hard error; routing through KEYKARD adds CORS, retries for READS, and an allow-list.
  * Sends are forwarded exactly once (never retried: double-send hazard; the client reconciles by receipt).
  */
 const READ = new Set([

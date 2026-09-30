@@ -11,18 +11,18 @@ const K = ({ k }: { k: string }) => <i data-k={k} className="kc-marker" aria-hid
 
 const STEPS = [
   { k: 'how-1', n: '01', title: 'Get a limit.', body: 'Verified in minutes, your first line starts at $20. No collateral, no deposit, no credit history needed.', extra: 'how-1b' },
-  { k: 'how-2', n: '02', title: 'Tap to pay.', body: 'Pay any KEYCARD merchant with Face ID, a password on any device, or by tapping a physical NFC card.' },
-  { k: 'how-3', n: '03', title: 'Auto-pay, capped by the chain.', body: 'You sign one permission: at most one bill per period, and only to KEYCARD. Tempo enforces the cap, so we physically can’t take more. Revoke it any time.' },
+  { k: 'how-2', n: '02', title: 'Tap to pay.', body: 'Pay any KEYKARD merchant with Face ID, a password on any device, or by tapping a physical NFC card.' },
+  { k: 'how-3', n: '03', title: 'Auto-pay, capped by the chain.', body: 'You sign one permission: at most one bill per period, and only to KEYKARD. Tempo enforces the cap, so we physically can’t take more. Revoke it any time.' },
   { k: 'how-4', n: '04', title: 'Pay on time, grow.', body: 'Two on-time bills in a row raise your limit: $20 → $50 → $100. Every payment builds a credit file that belongs to you.' },
 ]
 
 const FAQ = [
-  ['Is this real money?', 'KEYCARD runs on Tempo with real stablecoins. The pilot is live on Tempo testnet with small limits while we finish mainnet launch.'],
-  ['Can KEYCARD take more than I agreed?', 'No. The auto-pay permission is scoped on-chain: one bill per period, capped, and payable only to KEYCARD. The Tempo protocol rejects anything else, even from us.'],
+  ['Is this real money?', 'KEYKARD runs on Tempo with real stablecoins. The pilot is live on Tempo testnet with small limits while we finish mainnet launch.'],
+  ['Can KEYKARD take more than I agreed?', 'No. The auto-pay permission is scoped on-chain: one bill per period, capped, and payable only to KEYKARD. The Tempo protocol rejects anything else, even from us.'],
   ['Do you see my passport?', 'No. Self proves you are a unique, real person with a zero-knowledge check of your passport chip. We receive a proof, never the document.'],
   ['What happens if I miss a payment?', 'Your card pauses and the app shows exactly what’s due and the deadline. If a family member backs you, they’re told first. Past the deadline it’s recorded on your public credit file, and paying it settles your record.'],
-  ['Where can I pay?', 'Today: any KEYCARD merchant, and anyone can become one in a minute. Next: any card terminal, through a card-network partner, with the shop paid in local currency.'],
-  ['Are there fees?', 'No. KEYCARD sponsors every network fee, so your card never pays gas.'],
+  ['Where can I pay?', 'Today: any KEYKARD merchant, and anyone can become one in a minute. Next: any card terminal, through a card-network partner, with the shop paid in local currency.'],
+  ['Are there fees?', 'No. KEYKARD sponsors every network fee, so your card never pays gas.'],
 ]
 
 export default function Home() {
@@ -60,7 +60,7 @@ export default function Home() {
             <Reveal as="p" className="kc-kicker">01 · Identity</Reveal>
             <Reveal as="h2" className="kc-h2" id="verify-title">Prove you’re human. Not who you are.</Reveal>
             <Reveal as="p" className="kc-body">
-              Scan your passport’s chip with the Self app. KEYCARD learns one thing: you’re a unique, real person. No documents stored, no face on our servers, one line per human.
+              Scan your passport’s chip with the Self app. KEYKARD learns one thing: you’re a unique, real person. No documents stored, no face on our servers, one line per human.
             </Reveal>
           </div>
         </section>
@@ -123,7 +123,7 @@ export default function Home() {
           <K k="merchants" />
           <div className="kc-copy">
             <Reveal as="p" className="kc-kicker">06 · Merchants</Reveal>
-            <Reveal as="h2" className="kc-h2" id="merchants-title">Anyone can accept KEYCARD.</Reveal>
+            <Reveal as="h2" className="kc-h2" id="merchants-title">Anyone can accept KEYKARD.</Reveal>
             <Reveal as="p" className="kc-body">
               Register in a minute with any wallet. Customers scan your code or tap their card, and you’re paid in USDC on Tempo within seconds.
             </Reveal>
@@ -139,7 +139,7 @@ export default function Home() {
                 <p>Through a card-network partner, your credit line authorises on Tempo and the shop receives local currency. They never touch crypto.</p>
               </Rise>
             </div>
-            <Link href="/merchant" className="kc-link">Accept KEYCARD →</Link>
+            <Link href="/merchant" className="kc-link">Accept KEYKARD →</Link>
             <i data-k="merchants-out" className="kc-marker kc-marker--low" aria-hidden />
             <ul className="kc-sr">
               <li>Coffee</li><li>Groceries</li><li>Books</li><li>Transit</li><li>Street food</li><li>Pharmacy</li><li>Freelancers</li><li>Online stores</li><li>Tuition</li><li>Mobile top-up</li>
@@ -208,12 +208,12 @@ export default function Home() {
           <Reveal as="h2" className="kc-mega" id="final-title">Your first line is a minute away.</Reveal>
           <Rise className="kc-cta kc-cta--center">
             <Magnetic href="/start">Get your card</Magnetic>
-            <Magnetic href="/card" variant="ghost">I have a KEYCARD</Magnetic>
+            <Magnetic href="/card" variant="ghost">I have a KEYKARD</Magnetic>
           </Rise>
         </section>
       </main>
       <footer className="kc-footer">
-        <span>KEYCARD · a pilot credit programme with small limits</span>
+        <span>KEYKARD · a pilot credit programme with small limits</span>
         <span>
           Built on <a href="https://tempo.xyz" target="_blank" rel="noreferrer">Tempo</a> · Identity by <a href="https://self.xyz" target="_blank" rel="noreferrer">Self</a> ·{' '}
           <a href="https://github.com/Keycard-Org/keycard" target="_blank" rel="noreferrer">Open source</a>

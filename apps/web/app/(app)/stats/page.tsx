@@ -28,7 +28,7 @@ export default function Stats() {
   return (
     <main className="wrap wide">
       <span className="eyebrow" style={{ marginTop: 18 }}>Public credit file</span>
-      <h1 style={{ marginTop: 0 }}>KEYCARD, live</h1>
+      <h1 style={{ marginTop: 0 }}>KEYKARD, live</h1>
       <p className="muted small">Every number reconciles to a transaction on Tempo {cfg?.network}. Updates every 15 seconds.</p>
       <div className="grid" style={{ marginTop: 18 }}>
         {items.map(([v, label]) => (

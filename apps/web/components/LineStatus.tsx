@@ -103,7 +103,7 @@ export function LineStatus({ line, walletBal, onChange }: { line: any; walletBal
         : line.freezeReason === 'MissedPayment'
           ? 'a missed payment was covered by your guarantor'
           : line.freezeReason === 'Manual'
-            ? 'KEYCARD froze it'
+            ? 'KEYKARD froze it'
             : 'it is frozen'
     body = (
       <div className="error">
@@ -117,7 +117,7 @@ export function LineStatus({ line, walletBal, onChange }: { line: any; walletBal
         <div style={{ marginTop: 8, display: 'grid', gap: 8 }}>
           {line.freezeReason === 'MandateRevoked' && !line.mandateActive && <RenewBtn />}
           {line.mandateActive && payable > 0n && <PayBtn label={`Pay ${usd(payable)} now`} />}
-          {line.freezeReason === 'MissedPayment' && <span className="small">Settle with your guarantor, then contact KEYCARD to reopen.</span>}
+          {line.freezeReason === 'MissedPayment' && <span className="small">Settle with your guarantor, then contact KEYKARD to reopen.</span>}
         </div>
       </div>
     )

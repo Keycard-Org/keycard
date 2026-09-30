@@ -4,9 +4,9 @@ import { Magnetic } from './Magnetic'
 export function Nav() {
   return (
     <header className="kc-nav">
-      <Link href="/" className="kc-wordmark" aria-label="KEYCARD home">
+      <Link href="/" className="kc-wordmark" aria-label="KEYKARD home">
         <svg viewBox="0 0 30 16" aria-hidden><circle cx="7" cy="8" r="5.5" /><path d="M12.5 8H28M24 8v5" /></svg>
-        KEYCARD
+        KEYKARD
       </Link>
       <nav className="kc-nav__links" aria-label="Sections">
         <a href="#how">How it works</a>

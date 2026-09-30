@@ -5,7 +5,7 @@ import { explainChainError, linkPhysicalCard } from '@/lib/wallet'
 import { nfcSupportedHint } from '@/lib/halo'
 
 /**
- * Borrower: link a physical NFC KEYCARD (Burner card, chip slot 1), freeze/unfreeze it (reversible, limit 0 on-chain),
+ * Borrower: link a physical NFC KEYKARD (Burner card, chip slot 1), freeze/unfreeze it (reversible, limit 0 on-chain),
  * or unlink it (revokes the key: Tempo never re-authorises a revoked key on the same account).
  */
 export function PhysicalCard({
@@ -38,7 +38,7 @@ export function PhysicalCard({
   const freeze = run(() => api('/api/card/freeze', { method: 'POST' }), 'Card frozen. Tap Unfreeze to use it again.')
   const unfreeze = run(() => api('/api/card/unfreeze', { method: 'POST' }), 'Card unfrozen.')
   const unlink = () => {
-    if (!confirm('Unlink this card permanently from this KEYCARD? You will NOT be able to link this same card to this KEYCARD again (Tempo protocol rule). To pause it, use Freeze instead.')) return
+    if (!confirm('Unlink this card permanently from this KEYKARD? You will NOT be able to link this same card to this KEYKARD again (Tempo protocol rule). To pause it, use Freeze instead.')) return
     void run(() => api('/api/card/unlink', { method: 'POST' }), 'Card unlinked.')()
   }
 
@@ -52,7 +52,7 @@ export function PhysicalCard({
             {card!.status === 'active' ? 'Active' : 'Frozen'}: <span className="mono">{short(card!.address)}</span> · tap limit{' '}
             {usd(card!.limit)} per period
           </p>
-          <p className="small muted">Tap it on any KEYCARD merchant’s phone to pay. Lost it? Freeze it instantly.</p>
+          <p className="small muted">Tap it on any KEYKARD merchant’s phone to pay. Lost it? Freeze it instantly.</p>
           <div style={{ display: 'grid', gap: 8 }}>
             {card!.status === 'active' ? (
               <button className="danger block" disabled={busy} onClick={freeze}>Freeze card</button>
@@ -65,7 +65,7 @@ export function PhysicalCard({
       ) : (
         <>
           <p className="small">
-            Turn your NFC card (e.g. a <b>Burner</b> card) into a tap-to-pay KEYCARD. It gets its own small contactless
+            Turn your NFC card (e.g. a <b>Burner</b> card) into a tap-to-pay KEYKARD. It gets its own small contactless
             limit. We use the card’s free key slot. <b>Your Burner wallet and PIN are never touched.</b>
           </p>
           <p className="small muted">{nfcSupportedHint()}</p>

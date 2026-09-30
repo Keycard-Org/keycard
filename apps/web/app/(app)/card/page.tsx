@@ -177,14 +177,14 @@ export default function CardPage() {
             ))}
           </datalist>
           {merchantName && <p className="small ok">Paying: {merchantName}</p>}
-          {merchantName === '' && <p className="small warn">No KEYCARD merchant with this code.</p>}
+          {merchantName === '' && <p className="small warn">No KEYKARD merchant with this code.</p>}
           <label htmlFor="a">Amount (USD)</label>
           <input id="a" className="amount-input" inputMode="decimal" placeholder="$0.00" value={amount} onChange={(e) => setAmount(e.target.value)} />
           <button className="block" style={{ marginTop: 14 }} disabled={busy || !merchantName || !amount} onClick={pay}>
-            {busy ? 'Confirming…' : 'Pay with KEYCARD'}
+            {busy ? 'Confirming…' : 'Pay with KEYKARD'}
           </button>
           <p className="small muted" style={{ marginTop: 12 }}>
-            Your card can only pay KEYCARD merchants. The blockchain enforces this, not us.{' '}
+            Your card can only pay KEYKARD merchants. The blockchain enforces this, not us.{' '}
             <a href="#" onClick={(e) => (e.preventDefault(), tryRawAddress())}>See it refuse a random wallet</a>
           </p>
         </section>
@@ -241,7 +241,7 @@ export default function CardPage() {
           <div>Your wallet holds<b>{walletBal === null ? '—' : usd(walletBal)}</b></div>
         </div>
         <p className="small muted">
-          Bills are paid from your KEYCARD wallet <span className="mono">{short(me?.user?.wallet)}</span>. Keep at least what you owe there.
+          Bills are paid from your KEYKARD wallet <span className="mono">{short(me?.user?.wallet)}</span>. Keep at least what you owe there.
         </p>
         <span className="eyebrow" style={{ marginTop: 16 }}>Your limit ladder · on-time streak {line.onTimeCount}</span>
         <div className="stepper" style={{ marginTop: 6 }}>

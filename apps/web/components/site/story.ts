@@ -1,5 +1,5 @@
 /**
- * The scroll story: one KEYCARD travels through the whole page.
+ * The scroll story: one KEYKARD travels through the whole page.
  *
  * Sections drop invisible markers (`<i data-k="hero" />`). Each marker names a pose. A marker's anchor is the
  * scroll position at which it crosses the middle of the viewport; between two anchors the pose is interpolated.

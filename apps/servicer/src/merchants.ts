@@ -8,7 +8,7 @@ import { audit, sql } from './db'
 import { UserError } from './lines'
 
 /**
- * KEYCARD merchant network.
+ * KEYKARD merchant network.
  *  - Anyone who is a verified, unique human (Self) can become a merchant in seconds.
  *  - Cards pay the settlement address with memo KCP:<code>:<nonce>.
  *  - This worker settles each payment to the merchant's wallet in USDC.

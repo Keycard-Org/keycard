@@ -62,10 +62,10 @@ export default function MerchantPage() {
 
   return (
     <main className="wrap">
-      <h1>{dash ? dash.merchant.label : 'Accept KEYCARD'}</h1>
+      <h1>{dash ? dash.merchant.label : 'Accept KEYKARD'}</h1>
       {!dash && (
         <p className="muted small">
-          Get paid by KEYCARD holders. Customers pay from their credit line and you’re settled in{' '}
+          Get paid by KEYKARD holders. Customers pay from their credit line and you’re settled in{' '}
           {cfg?.tokenSymbol ?? 'USDC'} on Tempo within seconds. <b>Coming next:</b> settlement in local currency to your
           bank, and acceptance on any card terminal through our card-network partner.
         </p>
@@ -131,7 +131,7 @@ export default function MerchantPage() {
               </ul>
             )}
             <p className="small muted">
-              History is read from the Tempo blockchain. Settled to your KEYCARD wallet <span className="mono">{short(dash.merchant.settleTo)}</span>.
+              History is read from the Tempo blockchain. Settled to your KEYKARD wallet <span className="mono">{short(dash.merchant.settleTo)}</span>.
             </p>
           </section>
           <button className="ghost block" style={{ marginTop: 8 }} onClick={() => (signOut(), location.reload())}>Sign out</button>

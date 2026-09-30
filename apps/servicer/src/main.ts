@@ -31,7 +31,7 @@ app.all('/relay', async (c) => {
 })
 
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
-  console.log(`KEYCARD servicer on :${info.port}  network=${net.name} chain=${net.chainId}`)
+  console.log(`KEYKARD servicer on :${info.port}  network=${net.name} chain=${net.chainId}`)
   console.log(`  registry=${net.registry} lineBook=${net.lineBook} treasury=${treasury.address}`)
 })
 
