@@ -43,6 +43,9 @@ export default function Home() {
               <Magnetic href="/start">Get your card</Magnetic>
               <Magnetic href="/merchant" variant="ghost">I’m a merchant</Magnetic>
             </Rise>
+            <Rise delay={0.5}>
+              <a className="kc-link" href="https://github.com/Keykard/keykard/releases/latest/download/KEYKARD-android.apk" style={{ marginTop: 0, marginBottom: 32 }}>Get the Android app ↓</a>
+            </Rise>
             <Rise delay={0.55}>
               <LiveStats compact />
             </Rise>
@@ -158,7 +161,9 @@ export default function Home() {
             </Reveal>
             <Rise className="kc-cta">
               <Magnetic href="/start">Try it live</Magnetic>
+              <Magnetic href="https://github.com/Keykard/keykard/releases/latest/download/KEYKARD-android.apk" variant="ghost">Get the Android app</Magnetic>
             </Rise>
+            <p className="kc-muted" style={{ marginTop: 14 }}>Android 9+ · 97 MB · iPhone: open this site in Safari and add it to your home screen.</p>
           </div>
           <Rise className="kc-demo__phone">
             <PhoneMock />

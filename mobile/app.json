@@ -71,7 +71,10 @@
           "android": {
             "minSdkVersion": 28,
             "compileSdkVersion": 36,
-            "targetSdkVersion": 36
+            "targetSdkVersion": 36,
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "# native modules looked up by name (JNI / reflection)\n-keep class com.margelo.nitro.** { *; }\n-keep class com.reactnativepasskey.** { *; }\n-keep class community.revteltech.nfc.** { *; }\n# Credential Manager (passkeys) via Play services\n-if class androidx.credentials.CredentialManager\n-keep class androidx.credentials.playservices.** { *; }\n-keep class androidx.credentials.** { *; }\n-dontwarn com.google.android.gms.**"
           }
         }
       ],
