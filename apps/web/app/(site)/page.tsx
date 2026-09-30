@@ -115,6 +115,7 @@ export default function Home() {
               A relative with income can back your line. They sign one capped permission on their own wallet. It’s charged only if you miss, never more than they agreed, and they’re told before you’re late, not after. A backup raises your limit a level.
             </Reveal>
           </div>
+          <i data-k="family-out" className="kc-marker kc-marker--low" aria-hidden />
         </section>
 
         {/* 7 · Merchants */}
@@ -139,6 +140,7 @@ export default function Home() {
               </Rise>
             </div>
             <Link href="/merchant" className="kc-link">Accept KEYCARD →</Link>
+            <i data-k="merchants-out" className="kc-marker kc-marker--low" aria-hidden />
             <ul className="kc-sr">
               <li>Coffee</li><li>Groceries</li><li>Books</li><li>Transit</li><li>Street food</li><li>Pharmacy</li><li>Freelancers</li><li>Online stores</li><li>Tuition</li><li>Mobile top-up</li>
             </ul>

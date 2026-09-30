@@ -59,7 +59,9 @@ const KEYFRAMES: [string, Partial<Pose>][] = [
   ['states-3', { skin: 3 }],
   ['states-4', { skin: 4 }],
   ['family', { skin: 0, x: 0.5, y: 0.12, ry: -0.35, rx: 0.12, s: 0.86, family: 1 }],
-  ['merchants', { family: 0, x: 0.7, y: 0.9, s: 0.5, show: 0, helix: 1 }],
+  ['family-out', { family: 0, show: 0, y: 0.6, s: 0.6 }],
+  ['merchants', { x: 0.7, y: 0.9, s: 0.5, helix: 1 }],
+  ['merchants-out', {}],
   ['demo', { helix: 0 }],
   ['final', { x: 0, y: 0.5, rx: 0.3, ry: 0.28, rz: -0.02, s: 0.8, show: 1, limit: 100 }],
 ]

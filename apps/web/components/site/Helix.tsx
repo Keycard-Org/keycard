@@ -141,8 +141,10 @@ const fragmentShader = /* glsl */ `
   varying vec3 vWorldPosition;
   varying float vTile;
   void main() {
-    float col = mod(vTile, uGrid.x);
-    float row = floor(vTile / uGrid.x);
+    // integer-safe tile lookup: mod() on floats can land on 4.9999 vs 0 and flicker between two tiles
+    float tile = floor(vTile + 0.5);
+    float row = floor((tile + 0.5) / uGrid.x);
+    float col = tile - row * uGrid.x;
     vec2 uv = vec2((col + vUv.x) / uGrid.x, 1.0 - (row + 1.0 - vUv.y) / uGrid.y);
     vec4 tex = texture2D(uMap, uv);
 

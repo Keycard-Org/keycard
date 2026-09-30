@@ -71,6 +71,7 @@ html.lenis, html.lenis body { height: auto; }
 .kc-pill--ghost:hover { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.3); }
 .kc-pill--sm { min-height: 42px; padding: 0 20px; font-size: 14px; }
 .kc-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 44px; }
+.kc-body + .kc-cta, .kc-demo .kc-cta { margin-top: 36px; margin-bottom: 0; }
 .kc-cta--center { justify-content: center; margin: 48px 0 0; }
 
 /* ---------- sections ---------- */
