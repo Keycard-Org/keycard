@@ -5,7 +5,7 @@ The KEYKARD app: the same credit line, card, auto-pay, family backup and merchan
 
 | Web | App |
 | --- | --- |
-| WebAuthn passkeys on keycard-eight.vercel.app | Android Credential Manager passkeys for the **same** domain (`/.well-known/assetlinks.json` vouches for the app), so a passkey account works in both |
+| WebAuthn passkeys on www.keykard.xyz | Android Credential Manager passkeys for the **same** domain (`/.well-known/assetlinks.json` vouches for the app), so a passkey account works in both |
 | Password wallet (PBKDF2 600k → AES-GCM) | Same vault format, native crypto (react-native-quick-crypto) |
 | Burner card via Web NFC | Burner card via libhalo `execHaloCmdRN` + react-native-nfc-manager |
 | Merchant code typed or QR | Camera QR scanner, and App Links: scanning a merchant QR with the phone camera opens the app |

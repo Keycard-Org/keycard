@@ -7,6 +7,8 @@ const sans = Geist({ subsets: ['latin'], variable: '--font-sans', display: 'swap
 const mono = Geist_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://www.keykard.xyz'),
+  twitter: { card: 'summary_large_image' },
   title: 'KEYKARD credit without the bank',
   description:
     'A stablecoin credit card on Tempo. No bank, no collateral, no fees. Your card can only pay KEYKARD merchants, repayment is an auto-pay capped by the blockchain, and family can back you.',

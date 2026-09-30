@@ -61,7 +61,7 @@ export default function Merchant() {
         ) : dash === null ? (
           <Register onDone={load} />
         ) : (
-          <Till dash={dash} explorer={cfg?.explorerUrl} web={cfg?.publicWebOrigin ?? 'https://keycard-eight.vercel.app'} onPaid={() => setTimeout(load, 2500)} />
+          <Till dash={dash} explorer={cfg?.explorerUrl} web={cfg?.publicWebOrigin ?? 'https://www.keykard.xyz'} onPaid={() => setTimeout(load, 2500)} />
         )}
       </ScrollView>
     </SafeAreaView>

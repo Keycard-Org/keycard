@@ -13,7 +13,7 @@ import { color } from '@/ui/theme'
 export default function Settings() {
   const { me, cfg, refresh } = useSession()
   const kind = signerKind()
-  const web = cfg?.publicWebOrigin ?? 'https://keycard-eight.vercel.app'
+  const web = cfg?.publicWebOrigin ?? 'https://www.keykard.xyz'
   const out = async () => {
     await signOut()
     await refresh()

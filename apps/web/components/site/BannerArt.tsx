@@ -9,17 +9,17 @@ const BannerCanvas = dynamic(() => import('./BannerCanvas'), { ssr: false })
  * Social header art. Safe zones for X: the avatar covers the bottom-left, and phones crop the top and bottom,
  * so the copy sits mid-left above the avatar and the cards live in the right half.
  */
-export function BannerArt() {
+export function BannerArt({ variant = 'x' }: { variant?: 'x' | 'og' }) {
   const [ready, setReady] = useState(false)
   useEffect(() => {
     document.fonts?.ready.then(() => setReady(true))
   }, [])
   return (
-    <div className="bn">
+    <div className={`bn bn--${variant}`}>
       <style>{css}</style>
       <div className="bn-glow" />
       <div className="bn-lines" />
-      <div className="bn-canvas">{ready && <BannerCanvas />}</div>
+      <div className="bn-canvas">{ready && <BannerCanvas variant={variant} />}</div>
       <div className="bn-grain" />
       <div className="bn-copy">
         <div className="bn-brand">
@@ -33,6 +33,7 @@ export function BannerArt() {
         </div>
       </div>
       <div className="bn-live"><b /> Live on Tempo testnet</div>
+      {variant === 'og' && <div className="bn-url">keykard.xyz</div>}
     </div>
   )
 }
@@ -61,4 +62,14 @@ html, body { margin: 0; background: #0A0A0B; }
 .bn-live { position: absolute; right: 64px; top: 90px; display: inline-flex; align-items: center; gap: 9px; padding: 9px 15px; border-radius: 99px;
   border: 1px solid rgba(255,255,255,0.12); background: rgba(20,20,22,0.55); backdrop-filter: blur(8px); font: 500 13px/1 var(--font-mono-stack); letter-spacing: 0.08em; color: rgba(245,245,247,0.8); }
 .bn-live b { width: 8px; height: 8px; border-radius: 50%; background: #3DDC97; box-shadow: 0 0 12px #3DDC97; }
+
+/* link-preview card (Open Graph / X card), 1200×630 */
+.bn--og { width: 1200px; height: 630px; }
+.bn--og .bn-copy { left: 72px; top: 150px; width: 560px; }
+.bn--og h1 { font-size: 72px; }
+.bn--og p { font-size: 20px; }
+.bn--og .bn-tags { gap: 10px; font-size: 12px; letter-spacing: 0.12em; }
+.bn--og .bn-live { right: 56px; top: 56px; }
+.bn-url { position: absolute; left: 72px; bottom: 56px; font: 500 16px/1 var(--font-mono-stack); letter-spacing: 0.08em; color: rgba(245,245,247,0.55); }
+.bn--og .bn-glow { background: radial-gradient(520px 460px at 900px 330px, rgba(139,124,255,0.28), transparent 72%), radial-gradient(600px 380px at 1000px 660px, rgba(75,63,209,0.30), transparent 70%); }
 `

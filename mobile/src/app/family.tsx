@@ -21,7 +21,7 @@ export default function Family() {
     setBusy(true)
     try {
       const r = await api<{ inviteId: string }>('/api/guarantee/invite', { body: { requested: toBase(amount).toString() } })
-      setInvite(`${cfg?.publicWebOrigin ?? 'https://keycard-eight.vercel.app'}/g/${r.inviteId}`)
+      setInvite(`${cfg?.publicWebOrigin ?? 'https://www.keykard.xyz'}/g/${r.inviteId}`)
     } catch (e: any) {
       setErr(e.message)
     } finally {
