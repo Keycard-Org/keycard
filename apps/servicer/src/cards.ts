@@ -33,7 +33,7 @@ export async function linkCard(p: { wallet: Address; cardAddress: Address; signa
   if (recovered !== lower(p.cardAddress)) throw new UserError('card signature did not match this card')
 
   const [row] = await sql`SELECT * FROM lines WHERE borrower_wallet=${wallet} AND status='active'`
-  if (!row) throw new UserError('open your credit line first')
+  if (!row) throw new UserError('your credit line must be active to link a card')
   if (row.card_key_id && row.card_status === 'active') throw new UserError('a physical card is already linked; freeze it first')
   const [taken] = await sql`SELECT id FROM lines WHERE card_key_id=${recovered} AND id<>${row.id}`
   if (taken) throw new UserError('this card is linked to another KEYCARD')
@@ -84,7 +84,8 @@ export async function freezeCard(wallet: Address) {
 
 /** Public lookup for a merchant's phone after the first tap: which credit account does this card spend from? */
 export async function cardInfo(cardAddress: Address) {
-  const [row] = await sql`SELECT credit_account, card_limit, card_status, status FROM lines WHERE card_key_id=${lower(cardAddress)}`
+  const [row] = await sql`SELECT credit_account, card_limit, card_status, status FROM lines WHERE card_key_id=${lower(cardAddress)}
+                          ORDER BY created_at DESC LIMIT 1`
   if (!row) throw new UserError('this card is not linked to any KEYCARD', 404)
   if (row.card_status !== 'active') throw new UserError('this physical card has been frozen by its owner', 403)
   if (row.status === 'grace') throw new UserError('declined: this KEYCARD has an overdue payment. The owner needs to add money to their wallet.', 403)

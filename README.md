@@ -61,6 +61,7 @@ cd apps/servicer
 TEMPO_NETWORK=testnet npx tsx test/e2e.ts            # 23 checks: signup → mandate → card → merchant → auto-debit → upgrade → guarantor → freeze
 TEMPO_NETWORK=testnet npx tsx test/e2e-default.ts    # missed payment → grace → guarantor pays exactly the shortfall → frozen
 TEMPO_NETWORK=testnet npx tsx test/e2e-card.ts       # physical NFC card: link, tap-pay, tap limit, freeze
+TEMPO_NETWORK=testnet npx tsx test/e2e-edge.ts       # grace blocks phone+card, pay now, revoke/re-enable auto-debit, default → settle → new line
 USE_DEV_VERIFY=1 TEMPO_NETWORK=testnet npx tsx test/browser.ts   # real Chromium + virtual WebAuthn authenticator
 ```
 The e2e tests run against a live servicer on Tempo testnet: real transactions, fees sponsored.

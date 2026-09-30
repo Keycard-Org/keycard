@@ -264,3 +264,16 @@ export async function linkPhysicalCard(onStatus?: (s: string) => void) {
   const { signature, address } = await cardSignDigest(digest, onStatus)
   return api<{ cardAddress: Address; cardLimit: string }>('/api/card/link', { body: { cardAddress: address, signature } })
 }
+
+/** Re-enable a revoked auto-debit: new mandate key, one signature, KEYCARD activates it. */
+export async function renewMandateFlow() {
+  const s = await getSigner()
+  const r = await api<{ lineId: number; mandate: { keyId: Address; cap: string; periodSeconds: number; recipient: Address; expiry: number } }>(
+    '/api/lines/mandate/renew',
+    { method: 'POST' },
+  )
+  const cfg = await getConfig()
+  const policy = mandateKeyPolicy({ token: cfg.token, instalment: BigInt(r.mandate.cap), period: r.mandate.periodSeconds, repayTo: r.mandate.recipient, expiry: r.mandate.expiry })
+  const keyAuthorization = await signKeyAuthorization(s, r.mandate.keyId, policy)
+  return api('/api/lines/mandate/renew/confirm', { body: { keyAuthorization } })
+}

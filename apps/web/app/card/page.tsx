@@ -9,6 +9,7 @@ import { explainChainError, getSigner, payRawAddress, payWithCard, revokeKey, si
 import { AddMoney } from '@/components/AddMoney'
 import { StartOver } from '@/components/StartOver'
 import { PhysicalCard } from '@/components/PhysicalCard'
+import { LineStatus } from '@/components/LineStatus'
 import { MERCHANT_CODE_RE } from '@keycard/sdk'
 import type { Me } from '@/components/Onboard'
 
@@ -62,7 +63,7 @@ export default function CardPage() {
   }, [load])
 
   const line = me?.line
-  const frozen = line && ['frozen', 'defaulted'].includes(line.status)
+  const frozen = line && line.status !== 'active'
 
   const pay = async () => {
     setErr(null)
@@ -142,18 +143,7 @@ export default function CardPage() {
         </div>
       </div>
 
-      {line.status === 'frozen' && (
-        <p className="error">
-          Your card is frozen{line.freezeReason ? ` (${line.freezeReason})` : ''}. The Tempo protocol now refuses any spend
-          from it.
-        </p>
-      )}
-      {line.status === 'grace' && (
-        <p className="error">
-          Payment of {usd(line.amountDue)} is overdue. Add funds to your KEYCARD wallet before{' '}
-          {new Date(line.graceUntil).toLocaleString()} to avoid your guarantor being charged.
-        </p>
-      )}
+      <LineStatus line={line} walletBal={walletBal} onChange={load} />
       {err && <p className="error">{err}</p>}
       {msg && <p className="notice">{msg}</p>}
 
@@ -262,7 +252,7 @@ export default function CardPage() {
       </div>
 
       <div className="row between">
-        <button className="danger" disabled={busy || frozen} onClick={revokeMandate}>
+        <button className="danger" disabled={busy || !line.mandateActive || ['defaulted', 'settled'].includes(line.status)} onClick={revokeMandate}>
           Revoke auto-debit
         </button>
         <button className="ghost" onClick={() => (signOut(), router.replace('/'))}>

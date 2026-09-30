@@ -80,12 +80,14 @@ export async function prepareLine(borrower: Address) {
   borrower = lower(borrower)
   const [user] = await sql`SELECT * FROM users WHERE wallet = ${borrower}`
   if (!user || user.role !== 'borrower') throw new UserError('register as a borrower first')
-  const eligible = await registryRead<boolean>('isEligible', [borrower, BORROWER_FLAGS])
-  if (!eligible) throw new UserError('identity not verified yet (Self)', 403)
 
+  const [unsettled] = await sql`SELECT id, amount_due FROM lines WHERE borrower_wallet=${borrower} AND status='defaulted' LIMIT 1`
+  if (unsettled) throw new UserError('your previous line defaulted: settle it first (Pay now on your card page)', 403)
   const [existing] = await sql`
     SELECT * FROM lines WHERE borrower_wallet = ${borrower} AND status IN ('preparing','active','grace','frozen')`
   if (existing && existing.status !== 'preparing') throw new UserError('you already have a live line')
+  const eligible = await registryRead<boolean>('isEligible', [borrower, BORROWER_FLAGS])
+  if (!eligible) throw new UserError('identity not verified yet (Self)', 403)
   let row = existing
   if (!row) {
     const creditPk = generatePrivateKey()
@@ -288,19 +290,46 @@ export async function moveOnce(p: {
 // ---------------------------------------------------------------------------------------------
 // Card controls used by the scheduler / watcher / admin.
 // ---------------------------------------------------------------------------------------------
-export async function setSpendLimit(row: any, newLimit: bigint) {
+async function updateKeyLimit(row: any, keyId: string, newLimit: bigint) {
   const creditRoot = Account.fromSecp256k1(open(row.credit_root_enc))
-  await Actions.accessKey.updateLimitSync(clientFor(creditRoot), {
-    accessKey: row.spend_key_id,
-    token: net.token,
-    limit: newLimit,
-    feePayer: treasury,
-  } as any)
+  await resilient(
+    `update-limit-${keyId.slice(0, 8)}`,
+    () =>
+      Actions.accessKey.updateLimitSync(clientFor(creditRoot), {
+        accessKey: keyId,
+        token: net.token,
+        limit: newLimit,
+        feePayer: treasury,
+      } as any),
+    async () => {
+      const k = await getKey(row.credit_account, keyId as Address)
+      if (!k.exists || k.revoked) return true // nothing to update
+      return (await remainingLimit(row.credit_account, keyId as Address)).remaining === newLimit && newLimit === 0n
+    },
+  )
+}
+
+/** Sets the phone/passkey card key's per-period limit (used on tier upgrades). */
+export async function setSpendLimit(row: any, newLimit: bigint) {
+  if (row.spend_key_id) await updateKeyLimit(row, row.spend_key_id, newLimit)
+}
+
+/**
+ * Blocks or restores ALL spending keys on the credit account (phone card key AND physical NFC card key).
+ * 'blocked' = on-chain limit 0 (grace, frozen, defaulted). 'normal' = line limit / card tap limit.
+ */
+export async function applyLimits(row: any, mode: 'normal' | 'blocked') {
+  const spend = mode === 'normal' ? BigInt(row.credit_limit) : 0n
+  if (row.spend_key_id) await updateKeyLimit(row, row.spend_key_id, spend)
+  if (row.card_key_id && row.card_status === 'active') {
+    const card = mode === 'normal' ? BigInt(row.card_limit ?? 0) : 0n
+    await updateKeyLimit(row, row.card_key_id, card)
+  }
 }
 
 export async function freezeLine(row: any, reason: keyof typeof FreezeReason) {
-  if (row.status === 'frozen' || row.status === 'defaulted' || row.status === 'closed') return
-  await setSpendLimit(row, 0n)
+  if (row.status === 'frozen' || row.status === 'defaulted' || row.status === 'closed' || row.status === 'settled') return
+  await applyLimits(row, 'blocked')
   await lineBookWrite('recordFreeze', [BigInt(row.linebook_id), FreezeReason[reason]])
   await sql`UPDATE lines SET status='frozen', freeze_reason=${reason}, updated_at=now() WHERE id=${row.id}`
   await audit({ lineId: row.id, actor: 'servicer', action: 'line.frozen', detail: { reason } })
@@ -323,6 +352,11 @@ export async function lineView(id: number | bigint) {
     }
   }
   const owed = available === null ? 0n : limit > available ? limit - available : 0n
+  let mandateActive = false
+  if (row.status !== 'preparing') {
+    const k = await getKey(row.borrower_wallet, row.repay_key_id).catch(() => null)
+    mandateActive = Boolean(k && k.exists && !k.revoked)
+  }
   const spendable =
     available === null ? 0n : periodRemaining === null ? available : available < periodRemaining ? available : periodRemaining
   const s = (v: bigint | null) => (v === null ? null : v.toString())
@@ -334,6 +368,8 @@ export async function lineView(id: number | bigint) {
     creditAccount: row.credit_account as Address,
     spendKeyId: row.spend_key_id as Address | null,
     repayKeyId: row.repay_key_id as Address,
+    mandateActive,
+    settledAt: row.settled_at,
     card: row.card_key_id ? { address: row.card_key_id as Address, limit: String(row.card_limit), status: row.card_status } : null,
     token: row.token as Address,
     limit: limit.toString(),

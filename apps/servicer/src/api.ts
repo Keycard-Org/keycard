@@ -14,6 +14,7 @@ import { stats } from './stats'
 import { activateKeyAuthorization, checkKeyAuthorization } from './keyauth'
 import { fetchVault, storeBackup, usernameAvailable } from './passwordlogin'
 import { cardChallenge, cardInfo, freezeCard, linkCard } from './cards'
+import { confirmRenewMandate, maybeUnfreeze, payNow, renewMandate } from './lifecycle'
 import { getMerchant, merchantDashboard, registerMerchant } from './merchants'
 import { settlement, publicClient } from './chain'
 import { Actions } from 'viem/tempo'
@@ -257,6 +258,18 @@ app.post('/api/lines/:id/mandate', requireSession, async (c) => {
   const tx = await activateKeyAuthorization({ owner: wallet, keyId: row.repay_key_id, sealedKey: row.repay_key_enc, ka })
   await audit({ lineId: row.id, actor: 'borrower', action: 'mandate.signed', txHash: tx })
   return c.json({ ok: true, tx })
+})
+
+// ---- recovery paths ----
+app.post('/api/lines/pay-now', requireSession, async (c) => {
+  const v = await payNow(c.get('wallet'))
+  await maybeUnfreeze(c.get('wallet'))
+  return c.json(v)
+})
+app.post('/api/lines/mandate/renew', requireSession, async (c) => c.json(await renewMandate(c.get('wallet'))))
+app.post('/api/lines/mandate/renew/confirm', requireSession, async (c) => {
+  const { keyAuthorization } = z.object({ keyAuthorization: z.string().regex(/^0x[0-9a-fA-F]+$/) }).parse(await c.req.json())
+  return c.json(await confirmRenewMandate(c.get('wallet'), keyAuthorization as Hex))
 })
 
 app.post('/api/lines/:id/open', requireSession, async (c) =>
