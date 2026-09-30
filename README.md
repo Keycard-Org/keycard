@@ -42,7 +42,7 @@ Passkeys need HTTPS on phones. For a phone test, run `cloudflared tunnel --url h
 
 ## Deploy (Railway)
 Set these in each Railway service's Settings (Railway config-as-code is deprecated for new services).
-1. New project → **Deploy from GitHub repo** → `Keycard-Org/keycard`. Add **Postgres** (+ New → Database → PostgreSQL).
+1. New project → **Deploy from GitHub repo** → `Keykard/keykard`. Add **Postgres** (+ New → Database → PostgreSQL).
 2. **Service `keycard-servicer`:** start command `cd apps/servicer && ./node_modules/.bin/tsx src/main.ts`, health check `/api/health`, Serverless OFF. Variables:
    - the operator keys, `KEY_ENC_SECRET` and `ADMIN_TOKEN` (see `.env.example`);
    - `TEMPO_NETWORK=testnet`;
