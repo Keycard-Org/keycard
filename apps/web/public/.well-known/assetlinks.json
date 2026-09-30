@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.keykard.app",
+      "sha256_cert_fingerprints": [
+        "F3:D4:4A:82:D4:02:73:90:B5:29:38:FD:C5:81:42:ED:74:35:31:84:9C:46:9E:6D:D9:09:C7:D6:BB:F1:67:33"
+      ]
+    }
+  }
+]

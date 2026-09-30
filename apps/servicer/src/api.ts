@@ -3,7 +3,7 @@ import { cors } from 'hono/cors'
 import type { Address, Hex } from 'viem'
 import { z } from 'zod'
 import { BORROWER_FLAGS, GUARANTOR_FLAGS } from '@keycard/sdk'
-import { env, excludedCountries, net, tiers, webOrigins } from './config'
+import { env, excludedCountries, net, passkeyRpId, publicWebOrigin, tiers, webOrigins } from './config'
 import { treasury } from './chain'
 import { audit, sql } from './db'
 import { issueChallenge, issueRegistrationChallenge, mintSession, readSession, verifyAssertion, verifyKeyRegistration, verifyRegistration, walletFromPasskey } from './auth'
@@ -65,6 +65,8 @@ app.get('/api/config', async (c) => {
     selfEnabled: selfEnabled(),
     devVerify: devVerifyEnabled(),
     webOrigins,
+    publicWebOrigin,
+    passkeyRpId,
     merchants,
   })
 })
@@ -250,7 +252,7 @@ app.get('/api/me/activity', requireSession, async (c) => {
   const wallet = c.get('wallet')
   const [l] = await sql`SELECT id FROM lines WHERE borrower_wallet=${wallet} ORDER BY created_at DESC LIMIT 1`
   if (!l) return c.json({ spends: [], movements: [], events: [] })
-  const spends = await sql`SELECT p.pay_tx AS tx_hash, p.merchant_code, p.amount, p.status, p.settle_tx, p.block_number::text AS block_number, m.label
+  const spends = await sql`SELECT p.pay_tx AS tx_hash, p.merchant_code, p.amount, p.status, p.settle_tx, p.block_number::text AS block_number, p.created_at, m.label
                            FROM payments p LEFT JOIN merchants m ON m.code=p.merchant_code
                            WHERE p.line_id=${l.id} ORDER BY p.id DESC LIMIT 100`
   const movements = await sql`SELECT kind, amount, tx_hash, status, created_at FROM movements WHERE line_id=${l.id} ORDER BY created_at DESC LIMIT 100`

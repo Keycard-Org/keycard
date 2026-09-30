@@ -34,6 +34,10 @@ const Env = z.object({
   PUBLIC_WEB_ORIGIN: z.string().default('http://localhost:3000'),
   // every origin the web app / PWA is served from (passkey origin + rpId are checked against these)
   WEB_ORIGINS: z.string().default('http://localhost:3000'),
+  // native app origins for passkeys ("android:apk-key-hash:<base64url SHA-256 of the signing cert>"); comma-separated
+  ANDROID_APP_ORIGINS: z.string().default('android:apk-key-hash:89RKgtQCc5C1KTj9xYFC7XQ1MYScRp5t2QnH1rvxZzM'),
+  // WebAuthn relying party for the native app (the web domain that serves /.well-known/assetlinks.json)
+  PASSKEY_RP_ID: z.string().optional(),
   // testnet-only: allow registering a raw public key without a WebAuthn ceremony (used by API e2e tests)
   ALLOW_UNVERIFIED_REGISTRATION: z.enum(['0', '1']).default('0'),
   // testnet-only: lets a signed-in user skip Self (for team testing before Self is configured). Ignored on mainnet.
@@ -72,6 +76,8 @@ if (!net.registry || !net.lineBook) throw new Error(`no deployment found at ${de
 /** Origins as browsers send them: no trailing slash, no path. */
 export const webOrigins = env.WEB_ORIGINS.split(',').map((s) => s.trim().replace(/\/+$/, '')).filter(Boolean)
 export const publicWebOrigin = env.PUBLIC_WEB_ORIGIN.trim().replace(/\/+$/, '')
+export const androidAppOrigins = env.ANDROID_APP_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean)
+export const passkeyRpId = env.PASSKEY_RP_ID?.trim() || new URL(publicWebOrigin).hostname
 
 export const tiers = env.TIERS.split(',').map((s) => BigInt(s.trim()))
 export const excludedCountries = new Set(env.EXCLUDED_COUNTRIES.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean))

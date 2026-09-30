@@ -3,7 +3,7 @@ import { verifyMessage, type Address, type Hex } from 'viem'
 import { PublicKey, WebAuthnP256 } from 'ox'
 import { Credential, Registration } from 'ox/webauthn'
 import { Account } from 'viem/tempo'
-import { env, webOrigins } from './config'
+import { androidAppOrigins, env, passkeyRpId, webOrigins } from './config'
 import { sql } from './db'
 
 // Session auth: the client proves control of its passkey by signing a server nonce (WebAuthn assertion).
@@ -90,16 +90,20 @@ export function verifyRegistration(p: { challengeId: string; credential: any }):
   const c = regChallenges.get(p.challengeId)
   if (!c || c.exp < Date.now()) throw new Error('registration challenge expired')
   regChallenges.delete(p.challengeId)
-  const origins = webOrigins
+  // web: the rpId is the page's host; native Android app: its apk-key-hash origin with the web domain as rpId
+  const candidates = [
+    ...webOrigins.map((origin) => ({ origin, rpId: new URL(origin).hostname })),
+    ...androidAppOrigins.map((origin) => ({ origin, rpId: passkeyRpId })),
+  ]
   const cred = Credential.deserialize(p.credential)
   let lastErr: unknown
-  for (const origin of origins) {
+  for (const { origin, rpId } of candidates) {
     try {
       const r = Registration.verify({
         credential: cred as any,
         challenge: c.challenge,
         origin,
-        rpId: new URL(origin).hostname,
+        rpId,
       } as any) as any
       return { publicKey: PublicKey.toHex(r.credential.publicKey) as Hex, credentialId: r.credential.id ?? cred.id }
     } catch (e) {
