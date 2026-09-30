@@ -172,7 +172,7 @@ export default function Home() {
             <div>
               {Array.from({ length: 2 }).map((_, j) => (
                 <span key={j}>
-                  Sponsored gas <i /> Public credit file <i /> Open source <i /> Face ID or password <i /> No collateral <i /> Auto-pay you can revoke <i /> Family backup <i /> Tap-to-pay NFC card <i />
+                  Sponsored gas <i /> Public credit file <i /> Face ID or password <i /> No collateral <i /> Auto-pay you can revoke <i /> Family backup <i /> Tap-to-pay NFC card <i />
                 </span>
               ))}
             </div>
@@ -215,8 +215,7 @@ export default function Home() {
       <footer className="kc-footer">
         <span>KEYKARD · a pilot credit programme with small limits</span>
         <span>
-          Built on <a href="https://tempo.xyz" target="_blank" rel="noreferrer">Tempo</a> · Identity by <a href="https://self.xyz" target="_blank" rel="noreferrer">Self</a> ·{' '}
-          <a href="https://github.com/Keycard-Org/keycard" target="_blank" rel="noreferrer">Open source</a>
+          Built on <a href="https://tempo.xyz" target="_blank" rel="noreferrer">Tempo</a> · Identity by <a href="https://self.xyz" target="_blank" rel="noreferrer">Self</a>
         </span>
       </footer>
     </>
