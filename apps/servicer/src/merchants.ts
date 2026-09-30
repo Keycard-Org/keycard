@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto'
 import { parseAbiItem, type Address } from 'viem'
-import { getBlockNumber, getLogs } from 'viem/actions'
+import { getBlock, getBlockNumber, getLogs } from 'viem/actions'
 import { BORROWER_FLAGS, decodePayMemo, encodeMemo } from '@keycard/sdk'
 import { net } from './config'
 import { findMemoTransfer, publicClient, registryRead, registryWrite, settlement, sponsoredTransfer } from './chain'
@@ -138,10 +138,40 @@ export async function processPayments(from: bigint, to: bigint) {
 export async function merchantDashboard(owner: Address) {
   const [m] = await sql`SELECT * FROM merchants WHERE owner_wallet=${lower(owner)}`
   if (!m) return null
+  // history = on-chain settlements to this merchant's wallet (source of truth), enriched with app records when present
   const payments = await sql`
-    SELECT amount, pay_tx, settle_tx, status, created_at FROM payments WHERE merchant_code=${m.code} ORDER BY id DESC LIMIT 100`
-  const [tot] = await sql`SELECT COALESCE(sum(amount),0) AS total, count(*) AS n FROM payments WHERE merchant_code=${m.code} AND status='settled'`
-  return { merchant: merchantView(m), payments, settledTotal: tot.total.toString(), settledCount: Number(tot.n) }
+    SELECT s.amount, s.tx_hash AS settle_tx, p.pay_tx, 'settled' AS status, COALESCE(s.block_time, p.settled_at) AS created_at,
+           s.block_number::text AS block_number
+    FROM settlements s LEFT JOIN payments p ON p.settle_tx = s.tx_hash
+    WHERE s.to_addr = ${lower(m.settle_to)} ORDER BY s.block_number DESC LIMIT 200`
+  const [tot] = await sql`SELECT COALESCE(sum(amount),0) AS total, count(*) AS n FROM settlements WHERE to_addr=${lower(m.settle_to)}`
+  // settlements still in flight (received, not yet on-chain out)
+  const pending = await sql`SELECT amount, pay_tx, status, created_at FROM payments
+                            WHERE merchant_code=${m.code} AND status IN ('received','failed') ORDER BY id DESC LIMIT 20`
+  return { merchant: merchantView(m), payments, pending, settledTotal: tot.total.toString(), settledCount: Number(tot.n), source: 'tempo-chain' }
 }
 
 export const _head = () => getBlockNumber(publicClient)
+
+/** Index every transfer OUT of the settlement address (chain truth), with block timestamps. */
+export async function indexSettlements(from: bigint, to: bigint) {
+  const logs = (await getLogs(publicClient, {
+    address: net.token,
+    event: transferWithMemo,
+    args: { from: settlement.address },
+    fromBlock: from,
+    toBlock: to,
+  } as any)) as any[]
+  const times = new Map<bigint, Date>()
+  for (const l of logs) {
+    if (!times.has(l.blockNumber)) {
+      const b = await getBlock(publicClient, { blockNumber: l.blockNumber }).catch(() => null)
+      if (b) times.set(l.blockNumber, new Date(Number(b.timestamp) * 1000))
+    }
+    await sql`
+      INSERT INTO settlements (tx_hash, log_index, to_addr, amount, memo, block_number, block_time)
+      VALUES (${l.transactionHash}, ${l.logIndex}, ${lower(l.args.to)}, ${l.args.amount.toString()}, ${l.args.memo},
+              ${l.blockNumber.toString()}, ${times.get(l.blockNumber) ?? null})
+      ON CONFLICT DO NOTHING`
+  }
+}

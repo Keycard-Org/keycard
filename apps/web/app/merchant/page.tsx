@@ -9,7 +9,8 @@ import { TapToCharge } from '@/components/TapToCharge'
 
 type Dash = {
   merchant: { code: string; label: string; owner: string; settleTo: string; settlement: string }
-  payments: { amount: string; pay_tx: string; settle_tx: string | null; status: string; created_at: string }[]
+  payments: { amount: string; pay_tx: string | null; settle_tx: string; status: string; created_at: string | null }[]
+  pending?: { amount: string; pay_tx: string; status: string; created_at: string }[]
   settledTotal: string
   settledCount: number
 }
@@ -98,18 +99,23 @@ export default function MerchantPage() {
           </div>
           <div className="panel">
             <h2>Payments</h2>
+            {dash.pending && dash.pending.length > 0 && (
+              <p className="small notice">
+                {dash.pending.length} payment(s) settling now: {dash.pending.map((p) => usd(p.amount)).join(', ')}
+              </p>
+            )}
             {dash.payments.length === 0 ? (
               <p className="small muted">No payments yet.</p>
             ) : (
               <table>
                 <tbody>
                   {dash.payments.map((p) => (
-                    <tr key={p.pay_tx}>
+                    <tr key={p.settle_tx}>
                       <td>{usd(p.amount)}</td>
-                      <td className="small">{p.status}</td>
+                      <td className="small muted">{p.created_at ? new Date(p.created_at).toLocaleString() : ''}</td>
                       <td className="small">
-                        {p.settle_tx && cfg && (
-                          <a href={`${cfg.explorerUrl}/tx/${p.settle_tx}`} target="_blank" rel="noreferrer">settlement tx</a>
+                        {cfg && (
+                          <a href={`${cfg.explorerUrl}/tx/${p.settle_tx}`} target="_blank" rel="noreferrer">on-chain ↗</a>
                         )}
                       </td>
                     </tr>
@@ -117,6 +123,7 @@ export default function MerchantPage() {
                 </tbody>
               </table>
             )}
+            <p className="small muted">History is read from the Tempo blockchain (every settlement to your wallet).</p>
             <p className="small muted">Settled to <span className="mono">{short(dash.merchant.settleTo)}</span> (your KEYCARD wallet).</p>
           </div>
           <button className="ghost" onClick={() => (signOut(), location.reload())}>Sign out</button>

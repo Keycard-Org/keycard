@@ -4,7 +4,7 @@ import { Abis } from 'viem/tempo'
 import { ACCOUNT_KEYCHAIN } from '@keycard/sdk'
 import { net, tiers } from './config'
 import { lineBookWrite, publicClient, settlement, tokenBalance, treasury } from './chain'
-import { processPayments } from './merchants'
+import { processPayments, indexSettlements } from './merchants'
 import { audit, sql } from './db'
 import { freezeLine, moveOnce, setSpendLimit } from './lines'
 import { Account } from 'viem/tempo'
@@ -102,6 +102,15 @@ export async function watchTick() {
   running = true
   try {
     const head = await getBlockNumber(publicClient)
+    // on-chain settlement index: backfills from the deployment block once, then follows the head
+    const [sc] = await sql`SELECT last_block FROM cursors WHERE name='settlements'`
+    let sFrom = (sc ? BigInt(sc.last_block) : (net.deployBlock ?? head) - 1n) + 1n
+    while (sFrom <= head) {
+      const sTo = sFrom + 20_000n - 1n > head ? head : sFrom + 20_000n - 1n
+      await indexSettlements(sFrom, sTo)
+      await setCursor('settlements', sTo)
+      sFrom = sTo + 1n
+    }
     let from = (await cursor('watcher')) + 1n
     while (from <= head) {
       const to = from + STEP - 1n > head ? head : from + STEP - 1n
