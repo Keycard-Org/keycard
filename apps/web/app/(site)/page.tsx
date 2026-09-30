@@ -1,0 +1,222 @@
+import Link from 'next/link'
+import { Nav } from '@/components/site/Nav'
+import { Reveal, Rise } from '@/components/site/Reveal'
+import { Magnetic } from '@/components/site/Magnetic'
+import { LiveStats } from '@/components/site/LiveStats'
+import { CssCard } from '@/components/site/CssCard'
+import { StatesTrack } from '@/components/site/StatesTrack'
+import { PhoneMock } from '@/components/site/PhoneMock'
+
+const K = ({ k }: { k: string }) => <i data-k={k} className="kc-marker" aria-hidden />
+
+const STEPS = [
+  { k: 'how-1', n: '01', title: 'Get a limit.', body: 'Verified in minutes, your first line starts at $20. No collateral, no deposit, no credit history needed.', extra: 'how-1b' },
+  { k: 'how-2', n: '02', title: 'Tap to pay.', body: 'Pay any KEYCARD merchant with Face ID, a password on any device, or by tapping a physical NFC card.' },
+  { k: 'how-3', n: '03', title: 'Auto-pay, capped by the chain.', body: 'You sign one permission: at most one bill per period, and only to KEYCARD. Tempo enforces the cap, so we physically can’t take more. Revoke it any time.' },
+  { k: 'how-4', n: '04', title: 'Pay on time, grow.', body: 'Two on-time bills in a row raise your limit: $20 → $50 → $100. Every payment builds a credit file that belongs to you.' },
+]
+
+const FAQ = [
+  ['Is this real money?', 'KEYCARD runs on Tempo with real stablecoins. The pilot is live on Tempo testnet with small limits while we finish mainnet launch.'],
+  ['Can KEYCARD take more than I agreed?', 'No. The auto-pay permission is scoped on-chain: one bill per period, capped, and payable only to KEYCARD. The Tempo protocol rejects anything else, even from us.'],
+  ['Do you see my passport?', 'No. Self proves you are a unique, real person with a zero-knowledge check of your passport chip. We receive a proof, never the document.'],
+  ['What happens if I miss a payment?', 'Your card pauses and the app shows exactly what’s due and the deadline. If a family member backs you, they’re told first. Past the deadline it’s recorded on your public credit file, and paying it settles your record.'],
+  ['Where can I pay?', 'Today: any KEYCARD merchant, and anyone can become one in a minute. Next: any card terminal, through a card-network partner, with the shop paid in local currency.'],
+  ['Are there fees?', 'No. KEYCARD sponsors every network fee, so your card never pays gas.'],
+]
+
+export default function Home() {
+  return (
+    <>
+      <Nav />
+      <main className="kc-main">
+        {/* 1 · Hero */}
+        <section className="kc-hero kc-scene" aria-labelledby="hero-title">
+          <K k="hero" />
+          <div className="kc-hero__copy">
+            <Reveal as="p" className="kc-kicker" onLoad>Stablecoin credit · on Tempo</Reveal>
+            <Reveal as="h1" className="kc-h1" onLoad delay={0.1} id="hero-title">Credit without the bank.</Reveal>
+            <Reveal as="p" className="kc-lede" onLoad delay={0.25}>
+              A credit card for people no bank will score. No collateral. No fees. Every rule enforced by the blockchain, not by us.
+            </Reveal>
+            <Rise className="kc-cta" delay={0.4}>
+              <Magnetic href="/start">Get your card</Magnetic>
+              <Magnetic href="/merchant" variant="ghost">I’m a merchant</Magnetic>
+            </Rise>
+            <Rise delay={0.55}>
+              <LiveStats compact />
+            </Rise>
+          </div>
+          <div className="kc-hero__card kc-only-fallback">
+            <CssCard />
+          </div>
+          <a href="#verify" className="kc-scroll-hint" aria-label="Scroll to learn more"><span /></a>
+        </section>
+
+        {/* 2 · Verify */}
+        <section id="verify" className="kc-split kc-split--right kc-scene" aria-labelledby="verify-title">
+          <K k="verify" />
+          <div className="kc-copy">
+            <Reveal as="p" className="kc-kicker">01 · Identity</Reveal>
+            <Reveal as="h2" className="kc-h2" id="verify-title">Prove you’re human. Not who you are.</Reveal>
+            <Reveal as="p" className="kc-body">
+              Scan your passport’s chip with the Self app. KEYCARD learns one thing: you’re a unique, real person. No documents stored, no face on our servers, one line per human.
+            </Reveal>
+          </div>
+        </section>
+
+        {/* 3 · How it works */}
+        <section id="how" className="kc-how" aria-labelledby="how-title">
+          <div className="kc-how__head">
+            <Reveal as="p" className="kc-kicker">02 · How it works</Reveal>
+            <Reveal as="h2" className="kc-h2" id="how-title">A credit line in four moves.</Reveal>
+          </div>
+          {STEPS.map((s) => (
+            <div key={s.k} className="kc-step kc-scene">
+              <K k={s.k} />
+              <div className="kc-copy">
+                <span className="kc-step__n" aria-hidden>{s.n}</span>
+                <Reveal as="h3" className="kc-h3">{s.title}</Reveal>
+                <Reveal as="p" className="kc-body">{s.body}</Reveal>
+              </div>
+              {s.extra && <i data-k={s.extra} className="kc-marker kc-marker--low" aria-hidden />}
+            </div>
+          ))}
+        </section>
+
+        {/* 4 · Enforced */}
+        <section className="kc-enforced kc-scene" aria-labelledby="enforced-title">
+          <K k="enforced" />
+          <div className="kc-copy">
+            <Reveal as="p" className="kc-kicker">03 · Protocol</Reveal>
+            <Reveal as="h2" className="kc-h2" id="enforced-title">Enforced by the chain, not by us.</Reveal>
+            <Reveal as="p" className="kc-body">
+              Your card’s permission is scoped on Tempo itself. Try to pay a random wallet and the protocol refuses before any server sees it. Try it yourself in the app.
+            </Reveal>
+            <div className="kc-refused" aria-hidden>
+              <K k="enforced-hit" />
+              <span>Payment to 0x7f3a…c21e</span>
+              <strong>Refused by Tempo</strong>
+            </div>
+          </div>
+          <i data-k="enforced-out" className="kc-marker kc-marker--low" aria-hidden />
+        </section>
+
+        {/* 5 · States */}
+        <StatesTrack />
+
+        {/* 6 · Family */}
+        <section id="family" className="kc-split kc-scene" aria-labelledby="family-title">
+          <K k="family" />
+          <div className="kc-copy">
+            <Reveal as="p" className="kc-kicker">05 · Family backup</Reveal>
+            <Reveal as="h2" className="kc-h2" id="family-title">Backed by family, from anywhere.</Reveal>
+            <Reveal as="p" className="kc-body">
+              A relative with income can back your line. They sign one capped permission on their own wallet. It’s charged only if you miss, never more than they agreed, and they’re told before you’re late, not after. A backup raises your limit a level.
+            </Reveal>
+          </div>
+        </section>
+
+        {/* 7 · Merchants */}
+        <section id="merchants" className="kc-merchants kc-scene" aria-labelledby="merchants-title">
+          <K k="merchants" />
+          <div className="kc-copy">
+            <Reveal as="p" className="kc-kicker">06 · Merchants</Reveal>
+            <Reveal as="h2" className="kc-h2" id="merchants-title">Anyone can accept KEYCARD.</Reveal>
+            <Reveal as="p" className="kc-body">
+              Register in a minute with any wallet. Customers scan your code or tap their card, and you’re paid in USDC on Tempo within seconds.
+            </Reveal>
+            <div className="kc-rails">
+              <Rise className="kc-rail">
+                <span className="kc-rail__tag">Today</span>
+                <h3>USDC on Tempo</h3>
+                <p>Settled to your wallet in seconds, with every payment on-chain.</p>
+              </Rise>
+              <Rise className="kc-rail kc-rail--next" delay={0.1}>
+                <span className="kc-rail__tag">Next</span>
+                <h3>Any card terminal</h3>
+                <p>Through a card-network partner, your credit line authorises on Tempo and the shop receives local currency. They never touch crypto.</p>
+              </Rise>
+            </div>
+            <Link href="/merchant" className="kc-link">Accept KEYCARD →</Link>
+            <ul className="kc-sr">
+              <li>Coffee</li><li>Groceries</li><li>Books</li><li>Transit</li><li>Street food</li><li>Pharmacy</li><li>Freelancers</li><li>Online stores</li><li>Tuition</li><li>Mobile top-up</li>
+            </ul>
+          </div>
+        </section>
+
+        {/* 8 · Demo */}
+        <section className="kc-demo" aria-labelledby="demo-title">
+          <K k="demo" />
+          <div className="kc-copy">
+            <Reveal as="p" className="kc-kicker">07 · The app</Reveal>
+            <Reveal as="h2" className="kc-h2" id="demo-title">Everything on one screen.</Reveal>
+            <Reveal as="p" className="kc-body">
+              What you can spend, what you owe, when auto-pay runs, and a receipt for every payment. Plain words, no wallet jargon.
+            </Reveal>
+            <Rise className="kc-cta">
+              <Magnetic href="/start">Try it live</Magnetic>
+            </Rise>
+          </div>
+          <Rise className="kc-demo__phone">
+            <PhoneMock />
+          </Rise>
+        </section>
+
+        {/* 9 · No fees */}
+        <section className="kc-fees" aria-labelledby="fees-title">
+          <Reveal as="h2" className="kc-mega" id="fees-title">No fees. Not even gas.</Reveal>
+          <div className="kc-marquee" aria-hidden>
+            <div>
+              {Array.from({ length: 2 }).map((_, j) => (
+                <span key={j}>
+                  Sponsored gas <i /> Public credit file <i /> Open source <i /> Face ID or password <i /> No collateral <i /> Auto-pay you can revoke <i /> Family backup <i /> Tap-to-pay NFC card <i />
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 10 · Live */}
+        <section id="live" className="kc-live" aria-labelledby="live-title">
+          <Reveal as="p" className="kc-kicker">Live on Tempo</Reveal>
+          <Reveal as="h2" className="kc-h2" id="live-title">Every number here is on-chain.</Reveal>
+          <Rise>
+            <LiveStats />
+          </Rise>
+          <Link href="/stats" className="kc-link">See the public credit file →</Link>
+        </section>
+
+        {/* 11 · FAQ */}
+        <section id="faq" className="kc-faq" aria-labelledby="faq-title">
+          <Reveal as="h2" className="kc-h2" id="faq-title">Questions.</Reveal>
+          <div className="kc-faq__list">
+            {FAQ.map(([q, a]) => (
+              <details key={q}>
+                <summary>{q}</summary>
+                <p>{a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+
+        {/* 12 · Final */}
+        <section className="kc-final kc-scene" aria-labelledby="final-title">
+          <K k="final" />
+          <Reveal as="h2" className="kc-mega" id="final-title">Your first line is a minute away.</Reveal>
+          <Rise className="kc-cta kc-cta--center">
+            <Magnetic href="/start">Get your card</Magnetic>
+            <Magnetic href="/card" variant="ghost">I have a KEYCARD</Magnetic>
+          </Rise>
+        </section>
+      </main>
+      <footer className="kc-footer">
+        <span>KEYCARD · a pilot credit programme with small limits</span>
+        <span>
+          Built on <a href="https://tempo.xyz" target="_blank" rel="noreferrer">Tempo</a> · Identity by <a href="https://self.xyz" target="_blank" rel="noreferrer">Self</a> ·{' '}
+          <a href="https://github.com/Keycard-Org/keycard" target="_blank" rel="noreferrer">Open source</a>
+        </span>
+      </footer>
+    </>
+  )
+}

@@ -28,7 +28,7 @@ html, body { margin: 0; padding: 0; }
 body {
   background: var(--bg);
   color: var(--ink);
-  font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 16px/1.5 var(--font-sans-stack);
   -webkit-font-smoothing: antialiased;
 }
 a { color: var(--accent); text-decoration: none; }
@@ -84,4 +84,4 @@ label { display: block; font-size: 14px; font-weight: 600; margin: 12px 0 6px; }
 .badge { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 99px; border: 1px solid currentColor; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 td, th { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--line); }
-code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; word-break: break-all; }
+code, .mono { font-family: var(--font-mono-stack); font-size: 13px; word-break: break-all; }

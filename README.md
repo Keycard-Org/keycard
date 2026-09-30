@@ -72,3 +72,10 @@ The e2e tests run against a live servicer on Tempo testnet: real transactions, f
 - **Server-held keys are AES-256-GCM encrypted at rest:** credit-account roots, mandate keys and guarantee keys.
 - **Password wallets are encrypted client-side** (PBKDF2 600k + AES-GCM). The server stores only the ciphertext and a scrypt hash of a separately derived login proof.
 - **Physical cards use HaLo key slot 1 only.** The Burner wallet's own key (slots 8/9) and PIN are never touched.
+
+## Credits
+
+- Merchant helix on the landing page: geometry, spiral layout and depth-fade shader ported from
+  [YildizDikme/3D-threejs-spiral-gallery](https://github.com/YildizDikme/3D-threejs-spiral-gallery), used with the author's permission.
+- Landing page built with [React Three Fiber](https://github.com/pmndrs/react-three-fiber), [drei](https://github.com/pmndrs/drei),
+  [GSAP](https://gsap.com) (ScrollTrigger, SplitText), [Lenis](https://github.com/darkroomengineering/lenis) and [NumberFlow](https://number-flow.barvian.me).
