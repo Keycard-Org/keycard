@@ -9,6 +9,12 @@ import { startScheduler } from './scheduler'
 import { startWatcher } from './watcher'
 import { treasury } from './chain'
 
+// Safety net: Postgres BIGINT columns arrive as JavaScript BigInt, which JSON.stringify cannot encode.
+// Serialise any BigInt that reaches a response as a decimal string instead of crashing the request.
+;(BigInt.prototype as any).toJSON = function () {
+  return this.toString()
+}
+
 await migrate()
 
 app.use('/rpc', cors({ origin: webOrigins }))

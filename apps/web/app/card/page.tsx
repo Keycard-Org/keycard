@@ -37,7 +37,8 @@ export default function CardPage() {
       setMe(m)
       if (!m.line || m.line.status === 'preparing') return router.replace('/start')
       if (m.user) setWalletBal(await tokenBalance(m.user.wallet))
-      setActivity(await api('/api/me/activity'))
+      // the activity list is secondary: never let it break the card page
+      api('/api/me/activity').then(setActivity).catch(() => setActivity({ spends: [], movements: [], events: [] }))
     } catch (e: any) {
       if (e.status === 401) router.replace('/start')
       else setErr(e.message)
