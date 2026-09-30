@@ -121,7 +121,8 @@ const expoOut = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t))
 /** Shared live state so the family card and line can follow the main card. */
 export const live = { pos: new THREE.Vector3(), scale: 1, pose: { ...BASE } as Pose }
 
-export function Keycard({ intro = true }: { intro?: boolean }) {
+/** `fixed` pins the card to one pose (press/banner renders); `fit` overrides the share of the viewport width it fills. */
+export function Keycard({ intro = true, fixed, fit: fitOverride, halo = 1 }: { intro?: boolean; fixed?: Partial<Pose>; fit?: number; halo?: number }) {
   const viewport = useThree((s) => s.viewport)
   const group = useRef<THREE.Group>(null!)
   const inner = useRef<THREE.Group>(null!)
@@ -180,13 +181,14 @@ export function Keycard({ intro = true }: { intro?: boolean }) {
   const target = useRef<Pose>({ ...BASE })
   const cur = useRef<Pose>({ ...BASE })
   const shownLimit = useRef(BASE.limit)
-  const introT = useRef(intro && typeof window !== 'undefined' && window.scrollY < 40 ? 0 : 1)
+  const introT = useRef(intro && !fixed && typeof window !== 'undefined' && window.scrollY < 40 ? 0 : 1)
   const first = useRef(true)
 
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 1 / 20)
     const t = state.clock.elapsedTime
-    sample(window.scrollY, target.current)
+    if (fixed) Object.assign(target.current, BASE, fixed)
+    else sample(window.scrollY, target.current)
     const c = cur.current
     const g = target.current
     if (first.current) {
@@ -200,7 +202,7 @@ export function Keycard({ intro = true }: { intro?: boolean }) {
     const e = expoOut(introT.current)
 
     const portrait = viewport.aspect < 0.85
-    const fit = Math.min(1, (viewport.width * (portrait ? 0.72 : 0.4)) / CARD_W)
+    const fit = fitOverride ? (viewport.width * fitOverride) / CARD_W : Math.min(1, (viewport.width * (portrait ? 0.72 : 0.4)) / CARD_W)
     const px = portrait ? c.x * viewport.width * 0.08 : (c.x * viewport.width) / 2
     const py = portrait ? viewport.height * 0.25 + c.y * viewport.height * 0.2 : (c.y * viewport.height) / 2
     const jitter = c.glitch > 0.02 ? (Math.random() - 0.5) * 0.18 * c.glitch : 0
@@ -236,7 +238,7 @@ export function Keycard({ intro = true }: { intro?: boolean }) {
     mats.edge.emissive.copy(sk.edge).lerp(SKINS[3].edge, Math.min(1, c.glitch * 1.4))
     mats.edge.emissiveIntensity = 1.4 + c.glitch * 3
     mats.halo.color.copy(mats.edge.emissive)
-    mats.halo.opacity = 0.3 + Math.min(1, c.skin) * 0.25 + c.glitch * 0.4
+    mats.halo.opacity = (0.3 + Math.min(1, c.skin) * 0.25 + c.glitch * 0.4) * halo
 
     // auto-pay border
     const idx = geo.ring.index!.count

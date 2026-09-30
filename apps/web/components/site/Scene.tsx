@@ -19,7 +19,7 @@ function Ready() {
   return null
 }
 
-function Studio() {
+export function Studio() {
   return (
     <Environment resolution={256} frames={1}>
       <Lightformer form="rect" intensity={3} position={[0, 5, -2]} scale={[12, 3, 1]} rotation-x={Math.PI / 2} />
