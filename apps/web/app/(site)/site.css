@@ -127,7 +127,7 @@ html.lenis, html.lenis body { height: auto; }
 .kc-rail__tag { font: 500 11px/1 var(--font-mono-stack); letter-spacing: 0.16em; text-transform: uppercase; color: var(--kc-ok); }
 .kc-rail--next .kc-rail__tag { color: var(--kc-accent-hi); }
 
-.kc-demo { position: relative; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 6vw; padding: 140px max(24px, 7vw); min-height: 100vh; }
+.kc-demo { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 4vw; padding: 140px max(24px, 7vw); min-height: 100vh; }
 .kc-demo__phone { justify-self: center; }
 
 .kc-fees { padding: 140px 0 120px; text-align: center; overflow: hidden; }
