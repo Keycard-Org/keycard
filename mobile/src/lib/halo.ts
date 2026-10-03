@@ -10,6 +10,7 @@ import { Account } from 'viem/tempo'
 export const CARD_KEY_SLOT = 1
 
 export async function nfcState(): Promise<'ok' | 'off' | 'none'> {
+  if (process.env.EXPO_PUBLIC_FAKE_NFC === '1') return 'ok' // test builds only: exercise the tap UI on an emulator
   try {
     if (!(await NfcManager.isSupported())) return 'none'
     await NfcManager.start()
@@ -25,7 +26,13 @@ let busy = false
 async function halo(cmd: any, onStatus?: (s: string) => void) {
   if (busy) throw new Error('Already waiting for a card.')
   busy = true
-  const { execHaloCmdRN } = await import('@arx-research/libhalo/api/react-native')
+  let execHaloCmdRN: any
+  try {
+    ;({ execHaloCmdRN } = await import('@arx-research/libhalo/api/react-native'))
+  } catch (e: any) {
+    busy = false
+    throw new Error(`Couldn’t start the card reader (${String(e?.message ?? e).slice(0, 80)}). Update the app and try again.`)
+  }
   try {
     await NfcManager.start()
     onStatus?.('Hold the card to the back of the phone…')
@@ -36,6 +43,8 @@ async function halo(cmd: any, onStatus?: (s: string) => void) {
     const m = String(e?.message ?? e)
     if (/cancel/i.test(m)) throw new Error('Cancelled.')
     if (/Tag was lost|TagLost|transceive/i.test(m)) throw new Error('The card moved away too soon. Hold it still against the phone and try again.')
+    if (/no nfc support|not support/i.test(m)) throw new Error('This phone can’t read NFC cards. Use a phone with NFC.')
+    if (/nfc.*(disabled|not enabled|off)/i.test(m)) throw new Error('NFC is turned off. Turn it on in Settings and try again.')
     throw e
   } finally {
     busy = false
