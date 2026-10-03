@@ -89,17 +89,31 @@ export function lockDeviceKey() {
   unlocked = null
 }
 
-/** Minimal password prompt (native <dialog>, masked input). Resolves null if cancelled. */
+/** Password prompt (native <dialog>, masked input with a show/hide toggle). Resolves null if cancelled. */
 export function askPassword(message = 'Enter your KEYKARD password'): Promise<string | null> {
   return new Promise((resolve) => {
     const d = document.createElement('dialog')
-    d.style.cssText = 'border:1px solid #ccc;border-radius:14px;padding:18px;max-width:340px;width:90%'
-    d.innerHTML = `<form method="dialog"><p style="margin:0 0 10px;font-weight:600"></p>
-      <input type="password" autocomplete="current-password" style="width:100%;padding:12px;border-radius:10px;border:1px solid #ccc" />
-      <div style="display:flex;gap:8px;margin-top:12px"><button value="cancel" style="flex:1">Cancel</button><button value="ok" style="flex:1">Unlock</button></div></form>`
-    ;(d.querySelector('p') as HTMLElement).textContent = message
+    d.className = 'kc-dialog'
+    d.innerHTML = `<form method="dialog"><p class="kc-dialog__title"></p>
+      <p class="small muted" style="margin:0 0 12px">Your password unlocks the wallet on this device. It never leaves it.</p>
+      <span class="pw-wrap"><input type="password" autocomplete="current-password" aria-label="Password" />
+      <button type="button" class="pw-toggle" aria-label="Show password" aria-pressed="false">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path class="pw-slash" d="M4 4l16 16" style="display:none"/></svg>
+      </button></span>
+      <div style="display:flex;gap:8px;margin-top:14px"><button value="cancel" class="ghost" style="flex:1">Cancel</button><button value="ok" style="flex:1">Unlock</button></div></form>`
+    ;(d.querySelector('.kc-dialog__title') as HTMLElement).textContent = message
     document.body.appendChild(d)
     const input = d.querySelector('input') as HTMLInputElement
+    const toggle = d.querySelector('.pw-toggle') as HTMLButtonElement
+    const slash = d.querySelector('.pw-slash') as SVGPathElement
+    toggle.addEventListener('click', () => {
+      const show = input.type === 'password'
+      input.type = show ? 'text' : 'password'
+      slash.style.display = show ? '' : 'none'
+      toggle.setAttribute('aria-pressed', String(show))
+      toggle.setAttribute('aria-label', show ? 'Hide password' : 'Show password')
+      input.focus()
+    })
     d.addEventListener('close', () => {
       const v = d.returnValue === 'ok' ? input.value : null
       d.remove()

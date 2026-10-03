@@ -8,6 +8,7 @@ import { createDeviceKey, deriveAuthProof, deviceVault, importVaultAndUnlock, un
 import { COUNTRIES } from './countries'
 import { StartOver } from './StartOver'
 import { Stepper } from './Stepper'
+import { PasswordInput } from './PasswordInput'
 
 type Role = 'borrower' | 'guarantor' | 'merchant'
 export type Me = {
@@ -164,7 +165,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
           {deviceVault() && (
             <div className="notice small">
               This device has a password wallet.{' '}
-              <input type="password" placeholder="Password" value={pw} onChange={(e) => setPw(e.target.value)} style={{ marginTop: 8 }} />
+              <PasswordInput placeholder="Password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} style={{ marginTop: 8 }} />
               <button className="block" style={{ marginTop: 8 }} disabled={busy || !pw} onClick={existingPassword}>
                 Unlock & sign in
               </button>
@@ -199,9 +200,9 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
                 Faster to sign, but it lives on this device only, and it is only as strong as your password.
               </p>
               <label htmlFor="pw">Password (at least 10 characters)</label>
-              <input id="pw" type="password" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+              <PasswordInput id="pw" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} />
               <label htmlFor="pw2">Repeat password</label>
-              <input id="pw2" type="password" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
+              <PasswordInput id="pw2" autoComplete="new-password" value={pw2} onChange={(e) => setPw2(e.target.value)} />
             </>
           )}
           <label htmlFor="country">Where do you live?</label>
@@ -246,7 +247,7 @@ export function Onboard({ role, onReady }: { role: Role; onReady: (me: Me) => vo
               <label htmlFor="siu">Username</label>
               <input id="siu" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
               <label htmlFor="sip">Password</label>
-              <input id="sip" type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} />
+              <PasswordInput id="sip" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} />
               <p />
               <button className="block" disabled={busy || !username || !pw} onClick={passwordSignIn}>
                 {busy ? 'Signing in…' : 'Sign in'}

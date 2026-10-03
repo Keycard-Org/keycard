@@ -12,7 +12,7 @@ import { homeFor, useSession } from '@/lib/session'
 import { chargePhysicalCard, explainChainError } from '@/lib/wallet'
 import { Banner, Button, Chip, Field, ListRow, Panel, Row, Text } from '@/ui/kit'
 import { KeyMark } from '@/ui/KeykardCard'
-import { TapSheet } from '@/ui/TapSheet'
+import { CardFlowSheet, type FlowState } from '@/ui/CardFlowSheet'
 import { color, font } from '@/ui/theme'
 
 type Dash = {
@@ -101,36 +101,33 @@ function Till({ dash, explorer, web, onPaid }: { dash: Dash; explorer?: string; 
   const payLink = `${web}/card?pay=${dash.merchant.code}`
   const [amount, setAmount] = useState('')
   const [nfc, setNfc] = useState<'ok' | 'off' | 'none' | null>(null)
-  const [tapping, setTapping] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
+  const [flow, setFlow] = useState<{ state: FlowState; amount: bigint; error?: string; hash?: string; card?: string } | null>(null)
   const [result, setResult] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
   useEffect(() => {
     nfcState().then(setNfc)
   }, [])
 
-  const charge = async () => {
+  const charge = async (base?: bigint) => {
     setResult(null)
-    let base: bigint
-    try {
-      base = toBase(amount)
-    } catch (e: any) {
-      return setResult({ kind: 'error', text: e.message })
+    let value = base
+    if (value === undefined) {
+      try {
+        value = toBase(amount)
+        if (value <= 0n) throw new Error('Enter an amount above $0.')
+      } catch (e: any) {
+        return setResult({ kind: 'error', text: e.message })
+      }
     }
-    setTapping(true)
+    const v = value
+    setFlow({ state: 'hold', amount: v })
     try {
-      const tx = await chargePhysicalCard({ merchantCode: dash.merchant.code, amount: base, onStatus: setStatus })
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
-      setResult({ kind: 'ok', text: `Paid ${usd(base)} ✓ (${short(tx)}). Settling to you now.` })
+      const r = await chargePhysicalCard({ merchantCode: dash.merchant.code, amount: v, onStep: (st) => setFlow((f) => (f ? { ...f, state: st } : f)) })
+      setFlow({ state: 'done', amount: v, hash: r.hash, card: r.card })
       setAmount('')
       onPaid()
     } catch (e: any) {
-      if (!/Cancelled/i.test(e?.message)) {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {})
-        setResult({ kind: 'error', text: explainChainError(e) })
-      }
-    } finally {
-      setTapping(false)
-      setStatus(null)
+      if (/Cancelled/i.test(e?.message)) setFlow(null)
+      else setFlow({ state: 'error', amount: v, error: explainChainError(e) })
     }
   }
 
@@ -158,7 +155,7 @@ function Till({ dash, explorer, web, onPaid }: { dash: Dash; explorer?: string; 
         {nfc === 'none' && <Banner kind="warn">This phone has no NFC. Customers can still scan your QR.</Banner>}
         {nfc === 'off' && <Banner kind="warn"><Text v="small" style={{ color: color.text }}>NFC is off. <Text v="small" style={{ color: color.accentHi }} onPress={openNfcSettings}>Turn it on ›</Text></Text></Banner>}
         <Field testID="charge-amount" label="Amount (USD)" big keyboardType="decimal-pad" placeholder="$0.00" value={amount} onChangeText={(t) => setAmount(t.replace(/[^0-9.]/g, ''))} />
-        <Button testID="charge-go" title="Charge · tap card" disabled={!amount || nfc !== 'ok'} style={{ marginTop: 14 }} onPress={charge} />
+        <Button testID="charge-go" title="Charge · tap card" disabled={!amount || nfc !== 'ok'} style={{ marginTop: 14 }} onPress={() => charge()} />
         {result && <Banner kind={result.kind}>{result.text}</Banner>}
       </Panel>
 
@@ -180,7 +177,23 @@ function Till({ dash, explorer, web, onPaid }: { dash: Dash; explorer?: string; 
         )}
         <Text v="small" style={{ marginTop: 10 }}>Read from the Tempo blockchain. Settled to your wallet {short(dash.merchant.settleTo)}.</Text>
       </Panel>
-      <TapSheet visible={tapping} status={status} onCancel={() => { void cancelCardRead() }} />
+      <CardFlowSheet
+        visible={!!flow}
+        mode="charge"
+        state={flow?.state ?? 'hold'}
+        title={`Charging ${usd(flow?.amount ?? 0n)}`}
+        error={flow?.error}
+        done={flow?.state === 'done' ? {
+          headline: 'Payment received',
+          amount: usd(flow.amount),
+          lines: [`From KEYKARD •••• ${flow.card?.slice(-4) ?? ''}`, 'Settling to your wallet in a few seconds.'],
+          receiptUrl: explorer && flow.hash ? `${explorer}/tx/${flow.hash}` : undefined,
+        } : undefined}
+        onCancel={() => { void cancelCardRead(); setFlow(null) }}
+        onClose={() => setFlow(null)}
+        onRetry={() => flow && charge(flow.amount)}
+        onReceipt={(u) => WebBrowser.openBrowserAsync(u)}
+      />
     </>
   )
 }

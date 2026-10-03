@@ -8,15 +8,14 @@ import { cancelCardRead, nfcState, openNfcSettings } from '@/lib/halo'
 import { useSession } from '@/lib/session'
 import { explainChainError, linkPhysicalCard } from '@/lib/wallet'
 import { Banner, Button, Link, Panel, Screen, Text } from '@/ui/kit'
-import { TapSheet } from '@/ui/TapSheet'
+import { CardFlowSheet, type FlowState } from '@/ui/CardFlowSheet'
 import { color } from '@/ui/theme'
 
 export default function Physical() {
   const { me, refresh } = useSession()
   const [nfc, setNfc] = useState<'ok' | 'off' | 'none' | null>(null)
   const [busy, setBusy] = useState(false)
-  const [tapping, setTapping] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
+  const [flow, setFlow] = useState<{ state: FlowState; error?: string; card?: string; limit?: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const line = me?.line
@@ -32,7 +31,6 @@ export default function Physical() {
     setErr(null)
     setMsg(null)
     setBusy(true)
-    if (withTap) setTapping(true)
     try {
       await fn()
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
@@ -45,11 +43,21 @@ export default function Physical() {
       }
     } finally {
       setBusy(false)
-      setTapping(false)
-      setStatus(null)
     }
   }
-  const link = run(() => linkPhysicalCard(setStatus), 'Card linked. Tap it on any KEYKARD merchant’s phone to pay.', true)
+  const link = async () => {
+    setErr(null)
+    setMsg(null)
+    setFlow({ state: 'hold' })
+    try {
+      const r = await linkPhysicalCard((st) => setFlow((f) => (f ? { ...f, state: st } : f)))
+      setFlow({ state: 'done', card: r.cardAddress, limit: r.cardLimit })
+      await refresh()
+    } catch (e: any) {
+      if (/Cancelled/i.test(e?.message)) setFlow(null)
+      else setFlow({ state: 'error', error: explainChainError(e) })
+    }
+  }
   const freeze = run(() => api('/api/card/freeze', { method: 'POST' }), 'Card frozen. Unfreeze it any time.')
   const unfreeze = run(() => api('/api/card/unfreeze', { method: 'POST' }), 'Card unfrozen.')
   const unlink = () =>
@@ -96,13 +104,26 @@ export default function Physical() {
               KEYKARD uses the card’s free key slot. Your Burner wallet and PIN are never touched.
             </Text>
             {!canLink && <Banner kind="warn">Your line must be active to link a card.</Banner>}
-            <Button testID="card-link" title="Link a physical card" busy={busy && !tapping} disabled={busy || !canLink || nfc !== 'ok'} style={{ marginTop: 16 }} onPress={link} />
+            <Button testID="card-link" title="Link a physical card" busy={!!flow && flow.state !== 'done' && flow.state !== 'error'} disabled={busy || !!flow || !canLink || nfc !== 'ok'} style={{ marginTop: 16 }} onPress={link} />
           </>
         )}
       </Panel>
       {err && <Banner kind="error">{err}</Banner>}
       {msg && <Banner kind="ok">{msg}</Banner>}
-      <TapSheet visible={tapping} status={status} onCancel={() => { void cancelCardRead() }} />
+      <CardFlowSheet
+        visible={!!flow}
+        mode="link"
+        state={flow?.state ?? 'hold'}
+        title="Link your card"
+        error={flow?.error}
+        done={flow?.state === 'done' ? {
+          headline: 'Card linked',
+          lines: [`KEYKARD •••• ${flow.card?.slice(-4) ?? ''} is ready.`, `Tap limit ${usd(flow.limit ?? '0')} per period.`, 'Tap it on any KEYKARD merchant’s phone to pay.'],
+        } : undefined}
+        onCancel={() => { void cancelCardRead(); setFlow(null) }}
+        onClose={() => setFlow(null)}
+        onRetry={link}
+      />
     </Screen>
   )
 }

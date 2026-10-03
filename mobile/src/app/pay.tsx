@@ -27,6 +27,7 @@ export default function Pay() {
   const [err, setErr] = useState<string | null>(null)
   const [paid, setPaid] = useState<{ tx: string; label: string; amount: string } | null>(null)
   const [demo, setDemo] = useState(false)
+  const [step, setStep] = useState<'approve' | 'confirming' | null>(null)
 
   useEffect(() => {
     if (params.code) setCode(String(params.code).toUpperCase())
@@ -76,7 +77,7 @@ export default function Pay() {
     setBusy(true)
     try {
       const signer = await getSigner()
-      const tx = await payWithCard(signer, line.creditAccount as Address, code, base)
+      const tx = await payWithCard(signer, line.creditAccount as Address, code, base, setStep)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})
       setPaid({ tx, label: merchant, amount: usd(base) })
       void refresh()
@@ -87,6 +88,7 @@ export default function Pay() {
       }
     } finally {
       setBusy(false)
+      setStep(null)
     }
   }
 
@@ -159,9 +161,14 @@ export default function Pay() {
       </View>
 
       {err && <Banner kind="error">{err}</Banner>}
+      {busy && (
+        <View style={{ height: 3, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.08)', marginTop: 14, overflow: 'hidden' }}>
+          <View style={{ height: 3, width: step === 'confirming' ? '75%' : '30%', backgroundColor: color.accent }} />
+        </View>
+      )}
       <Button
         testID="pay-confirm"
-        title={busy ? 'Confirming…' : merchant && base > 0n ? `Pay ${usd(base)} to ${merchant}` : 'Pay with KEYKARD'}
+        title={busy ? (step === 'approve' ? 'Confirm with your fingerprint…' : step === 'confirming' ? 'Confirming on Tempo…' : 'Preparing…') : merchant && base > 0n ? `Pay ${usd(base)} to ${merchant}` : 'Pay with KEYKARD'}
         busy={busy}
         disabled={frozen || !merchant || base <= 0n || over}
         style={{ marginTop: 14 }}

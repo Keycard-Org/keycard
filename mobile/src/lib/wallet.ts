@@ -101,7 +101,7 @@ export async function startOver() {
   await clearAll()
 }
 
-function passkeyAccount(s: Extract<Signer, { kind: 'passkey' }>, access?: Address) {
+function passkeyAccount(s: Extract<Signer, { kind: 'passkey' }>, access?: Address, onSigned?: () => void) {
   const publicKey = PublicKey.fromHex(s.cred.publicKey)
   return Account.from({
     ...(access ? { access } : {}),
@@ -109,6 +109,7 @@ function passkeyAccount(s: Extract<Signer, { kind: 'passkey' }>, access?: Addres
     publicKey,
     async sign({ hash }: { hash: Hex }) {
       const { metadata, signature } = await signWithPasskey({ challenge: hash, credentialId: s.cred.id, rpId: await rpId() })
+      onSigned?.()
       return SignatureEnvelope.serialize({ publicKey, metadata, signature, type: 'webAuthn' } as any)
     },
   } as any)
@@ -117,8 +118,8 @@ function passkeyAccount(s: Extract<Signer, { kind: 'passkey' }>, access?: Addres
 export const rootAccount = (s: Signer) => (s.kind === 'passkey' ? passkeyAccount(s) : Account.fromSecp256k1(s.pk))
 
 /** The signer acting as an access key on another account (the credit account = the card). */
-export const accessKeyAccount = (s: Signer, parent: Address) =>
-  s.kind === 'password' ? Account.fromSecp256k1(s.pk, { access: parent }) : passkeyAccount(s, parent)
+export const accessKeyAccount = (s: Signer, parent: Address, onSigned?: () => void) =>
+  s.kind === 'password' ? Account.fromSecp256k1(s.pk, { access: parent }) : passkeyAccount(s, parent, onSigned)
 
 export async function relayClient(account: any, cfg?: AppConfig) {
   const config = cfg ?? (await getConfig())
@@ -191,9 +192,10 @@ export async function revokeKey(s: Signer, keyId: Address) {
   return r.receipt.transactionHash as Hex
 }
 
-export async function payWithCard(s: Signer, creditAccount: Address, merchantCode: string, amount: bigint) {
+export async function payWithCard(s: Signer, creditAccount: Address, merchantCode: string, amount: bigint, onStep?: (st: 'approve' | 'confirming') => void) {
   const cfg = await getConfig()
-  const client = await relayClient(accessKeyAccount(s, creditAccount), cfg)
+  onStep?.(s.kind === 'passkey' ? 'approve' : 'confirming') // a password wallet signs instantly
+  const client = await relayClient(accessKeyAccount(s, creditAccount, () => onStep?.('confirming')), cfg)
   const r = (await Actions.token.transferSync(client, {
     token: cfg.token, to: cfg.settlement, amount, memo: encodePayMemo(merchantCode), feePayer: true, ...slowSignerNonce(),
   } as any)) as any
@@ -216,29 +218,56 @@ export async function renewMandateFlow() {
   return api('/api/lines/mandate/renew/confirm', { body: { keyAuthorization } })
 }
 
-/** Merchant: charge a customer's physical KEYKARD. Tap 1 identifies the card; tap 2 signs the payment. */
-export async function chargePhysicalCard(p: { merchantCode: string; amount: bigint; onStatus?: (s: string) => void }) {
-  const { readCard, cardAccessKeyAccount } = await import('./halo')
+export type CardStep = 'hold' | 'reading' | 'checking' | 'signing' | 'confirming' | 'linking'
+
+/**
+ * Merchant: charge a customer's physical KEYKARD with ONE tap. While the card is held: read it, check it can pay,
+ * and have the chip sign the payment; then confirm on Tempo (the reader stays reserved until it's done).
+ */
+export async function chargePhysicalCard(p: { merchantCode: string; amount: bigint; onStep?: (s: CardStep) => void }) {
+  if (process.env.EXPO_PUBLIC_FAKE_NFC === '1') return simulateCard(['hold', 'reading', 'checking', 'signing', 'confirming'], p.onStep, p.amount > 50_000_000n)
+  const { withCard, readCard, cardAccessKeyAccount } = await import('./halo')
   const cfg = await getConfig()
-  p.onStatus?.('Customer: tap your KEYKARD')
-  const card = await readCard(p.onStatus)
-  const info = await api<{ creditAccount: Address; cardLimit: string }>(`/api/cards/${card.address}`, { auth: false })
-  if (p.amount > BigInt(info.cardLimit)) throw new Error(`Over this card’s tap limit ($${(Number(info.cardLimit) / 1e6).toFixed(2)}).`)
-  p.onStatus?.('Tap the card again to pay')
-  const client = await relayClient(cardAccessKeyAccount(info.creditAccount, card.publicKey, p.onStatus), cfg)
-  const r = (await Actions.token.transferSync(client, {
-    token: cfg.token, to: cfg.settlement, amount: p.amount, memo: encodePayMemo(p.merchantCode), feePayer: true, ...slowSignerNonce(),
-  } as any)) as any
-  return r.receipt.transactionHash as Hex
+  p.onStep?.('hold')
+  return withCard(async (session) => {
+    p.onStep?.('reading')
+    const card = await readCard(session)
+    p.onStep?.('checking')
+    const info = await api<{ creditAccount: Address; cardLimit: string }>(`/api/cards/${card.address}`, { auth: false })
+    if (p.amount > BigInt(info.cardLimit)) throw new Error(`Over this card’s tap limit ($${(Number(info.cardLimit) / 1e6).toFixed(2)}).`)
+    p.onStep?.('signing')
+    const account = cardAccessKeyAccount(session, info.creditAccount, card.publicKey, () => p.onStep?.('confirming'))
+    const client = await relayClient(account, cfg)
+    const r = (await Actions.token.transferSync(client, {
+      token: cfg.token, to: cfg.settlement, amount: p.amount, memo: encodePayMemo(p.merchantCode), feePayer: true, ...slowSignerNonce(),
+    } as any)) as any
+    return { hash: r.receipt.transactionHash as Hex, card: card.address }
+  })
 }
 
-/** Cardholder: link a physical card to your line (the card proves possession by signing a server challenge). */
-export async function linkPhysicalCard(onStatus?: (s: string) => void) {
-  const { cardSignDigest } = await import('./halo')
+/** Test builds only (EXPO_PUBLIC_FAKE_NFC): walk the card steps with realistic timing so the UI can be checked on an emulator. */
+async function simulateCard(steps: CardStep[], onStep?: (s: CardStep) => void, fail = false) {
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
+  for (const st of steps) {
+    onStep?.(st)
+    await wait(st === 'hold' ? 2500 : st === 'confirming' ? 2200 : 900)
+  }
+  if (fail) throw new Error('Refused by the Tempo protocol: this is over your available limit for this period (or your card is frozen).')
+  return { hash: ('0x' + 'ab'.repeat(32)) as Hex, card: '0x3c86aa11bb22cc33dd44ee55ff6677889900abcd' as Address }
+}
+
+/** Cardholder: link a physical card to your line with ONE tap (the card proves possession by signing a challenge). */
+export async function linkPhysicalCard(onStep?: (s: CardStep) => void) {
+  if (process.env.EXPO_PUBLIC_FAKE_NFC === '1') return simulateCard(['hold', 'signing', 'linking'], onStep, false).then(() => ({ cardAddress: '0x3c86aa11bb22cc33dd44ee55ff6677889900abcd' as Address, cardLimit: '10000000' }))
+  const { withCard, cardSignDigest } = await import('./halo')
   const { digest } = await api<{ challenge: Hex; digest: Hex }>('/api/card/challenge', { method: 'POST' })
-  onStatus?.('Tap your card to link it')
-  const { signature, address } = await cardSignDigest(digest, onStatus)
-  return api<{ cardAddress: Address; cardLimit: string }>('/api/card/link', { body: { cardAddress: address, signature } })
+  onStep?.('hold')
+  return withCard(async (session) => {
+    onStep?.('signing')
+    const { signature, address } = await cardSignDigest(session, digest)
+    onStep?.('linking')
+    return api<{ cardAddress: Address; cardLimit: string }>('/api/card/link', { body: { cardAddress: address, signature } })
+  })
 }
 
 /** Human-readable reason from a Tempo keychain / TIP-20 revert or a wallet error. */

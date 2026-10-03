@@ -1,4 +1,4 @@
-import { forwardRef, type ReactNode } from 'react'
+import { forwardRef, useState, type ReactNode } from 'react'
 import {
   ActivityIndicator, Pressable, ScrollView, StyleSheet, Text as RNText, TextInput, View,
   type PressableProps, type StyleProp, type TextInputProps, type TextProps, type TextStyle, type ViewStyle,
@@ -6,6 +6,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { color, font, radius, space } from './theme'
+import { EyeIcon } from './Icons'
 
 /* ---------------- text ---------------- */
 type Variant = 'display' | 'h1' | 'h2' | 'h3' | 'body' | 'small' | 'label' | 'eyebrow' | 'mono' | 'amount'
@@ -92,19 +93,37 @@ export function Link({ title, onPress, style, testID }: { title: string; onPress
 
 /* ---------------- inputs ---------------- */
 export const Field = forwardRef<TextInput, TextInputProps & { label?: string; hint?: string; big?: boolean; error?: string | null }>(function Field(
-  { label, hint, big, error, style, ...p }, ref,
+  { label, hint, big, error, style, secureTextEntry, ...p }, ref,
 ) {
+  // password fields get a show/hide toggle
+  const [shown, setShown] = useState(false)
+  const secret = !!secureTextEntry
   return (
     <View style={{ marginTop: 14 }}>
       {label && <Text v="label" style={{ marginBottom: 7 }}>{label}</Text>}
-      <TextInput
-        ref={ref}
-        placeholderTextColor={color.text3}
-        selectionColor={color.accent}
-        cursorColor={color.accent}
-        {...p}
-        style={[s.input, big && s.inputBig, !!error && { borderColor: 'rgba(255,92,92,0.6)' }, style]}
-      />
+      <View>
+        <TextInput
+          ref={ref}
+          placeholderTextColor={color.text3}
+          selectionColor={color.accent}
+          cursorColor={color.accent}
+          {...p}
+          secureTextEntry={secret && !shown}
+          style={[s.input, big && s.inputBig, secret && { paddingRight: 52 }, !!error && { borderColor: 'rgba(255,92,92,0.6)' }, style]}
+        />
+        {secret && (
+          <Pressable
+            testID={p.testID ? `${p.testID}-toggle` : undefined}
+            accessibilityRole="button"
+            accessibilityLabel={shown ? 'Hide password' : 'Show password'}
+            hitSlop={10}
+            onPress={() => setShown((v) => !v)}
+            style={{ position: 'absolute', right: 6, top: 0, bottom: 0, width: 44, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <EyeIcon off={shown} />
+          </Pressable>
+        )}
+      </View>
       {error ? <Text v="small" style={{ color: color.bad, marginTop: 6 }}>{error}</Text> : hint ? <Text v="small" style={{ marginTop: 6, color: color.text3 }}>{hint}</Text> : null}
     </View>
   )

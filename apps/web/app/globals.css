@@ -221,3 +221,15 @@ tr:last-child td { border-bottom: 0; }
 
 .account-bar button { flex: none; white-space: nowrap; }
 .account-bar > span { min-width: 0; }
+
+/* password show/hide */
+.pw-wrap { position: relative; display: block; }
+.pw-wrap input { padding-right: 52px; }
+button.pw-toggle { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); min-height: 0; width: 44px; height: 44px; padding: 0; border-radius: 12px; background: transparent; color: var(--kc-text-2); border: 0; }
+button.pw-toggle:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); color: var(--kc-text); box-shadow: none; }
+button.pw-toggle:active:not(:disabled) { transform: translateY(-50%) scale(0.96); }
+
+/* app dialogs (password unlock) */
+dialog.kc-dialog { width: min(92vw, 380px); padding: 22px; border-radius: 20px; border: 1px solid var(--kc-hairline); background: var(--kc-surface-1); color: var(--kc-text); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.8); }
+dialog.kc-dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
+.kc-dialog__title { margin: 0 0 6px; font-size: 18px; font-weight: 500; letter-spacing: -0.02em; }
